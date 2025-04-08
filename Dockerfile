@@ -39,25 +39,27 @@ ENV NEXT_TELEMETRY_DISABLED 1
 RUN adduser --system --uid 1001 nextjs
 
 # Copy necessary files
-COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
-# Set the correct permission for prerender cache
-RUN mkdir .next && \
+# Set the correct permission for prerender cache and node_modules
+RUN mkdir -p .next && \
     chown nextjs:bun .next && \
+    mkdir -p node_modules && \
     chown -R nextjs:bun node_modules
 
 # Create startup script before changing user
-RUN echo '#!/bin/sh\ncd /app\nbunx prisma generate\nbunx prisma migrate deploy\nbun server.js' > /app/start.sh && \
+RUN echo '#!/bin/sh\ncd /app\nbunx prisma migrate deploy\nbun server.js' > /app/start.sh && \
     chmod +x /app/start.sh && \
-    chown nextjs:bun /app/start.sh && \
-    chown -R nextjs:bun prisma
+    chown nextjs:bun /app/start.sh
 
 # Automatically leverage output traces to reduce image size
 COPY --from=builder --chown=nextjs:bun /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:bun /app/.next/static ./.next/static
+
+# Ensure all files have correct permissions
+RUN chown -R nextjs:bun .
 
 USER nextjs
 
