@@ -1,0 +1,69 @@
+// This is your Prisma schema file
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model Session {
+    id             String     @id @default(cuid())
+    creatorName    String
+    restaurantId   String
+    restaurantName String
+    cutoffTime     DateTime?
+    createdAt      DateTime   @default(now())
+    users          User[]
+    items          Item[]
+    reactions      Reaction[]
+}
+
+model User {
+    id        String     @id @default(cuid())
+    name      String
+    sessionId String
+    session   Session    @relation(fields: [sessionId], references: [id])
+    items     Item[]
+    reactions Reaction[]
+    createdAt DateTime   @default(now())
+}
+
+model Item {
+    id        String     @id @default(cuid())
+    name      String
+    quantity  Int        @default(1)
+    note      String?
+    userId    String
+    sessionId String
+    user      User       @relation(fields: [userId], references: [id])
+    session   Session    @relation(fields: [sessionId], references: [id])
+    reactions Reaction[]
+    createdAt DateTime   @default(now())
+}
+
+model Reaction {
+    id        String   @id @default(cuid())
+    emoji     String
+    userId    String
+    itemId    String
+    sessionId String
+    user      User     @relation(fields: [userId], references: [id])
+    item      Item     @relation(fields: [itemId], references: [id])
+    session   Session  @relation(fields: [sessionId], references: [id])
+    createdAt DateTime @default(now())
+}
+
+model Restaurant {
+    id       String              @unique
+    name     String
+    rating   Float?
+    provider RestaurantProvider?
+}
+
+enum RestaurantProvider {
+    ZOMATO
+    SWIGGY
+}

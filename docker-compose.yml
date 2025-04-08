@@ -1,0 +1,20 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=kapirun
+      - POSTGRES_PASSWORD=kapirun
+      - POSTGRES_DB=kapirun
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kapirun"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
