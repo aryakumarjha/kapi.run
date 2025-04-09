@@ -25,7 +25,9 @@ export const useUserStore = create<UserState>()(
         return { id: state.id, name: state.name };
       },
       onRehydrateStorage() {
-        useUserStore.setState({ rehydrayted: true });
+        return () => {
+          useUserStore.setState({ rehydrayted: true });
+        };
       },
     }
   )
