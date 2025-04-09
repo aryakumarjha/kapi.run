@@ -46,7 +46,7 @@ export const MenuItemCard = ({ item }: { item: SimplifiedMenuItem }) => {
               alt={item.name}
               width={80}
               height={80}
-              className="object-cover rounded-md"
+              className="object-cover rounded-md w-auto"
             />
           </div>
         )}
