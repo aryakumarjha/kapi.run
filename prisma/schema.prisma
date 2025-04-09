@@ -35,16 +35,30 @@ model User {
 }
 
 model Item {
-    id        String     @id @default(cuid())
+    id        String           @id @default(cuid())
     name      String
-    quantity  Int        @default(1)
+    quantity  Int              @default(1)
     note      String?
     userId    String
     sessionId String
-    user      User       @relation(fields: [userId], references: [id])
-    session   Session    @relation(fields: [sessionId], references: [id])
+    basePrice Int
+    addons    AddonSelection[]
+    user      User             @relation(fields: [userId], references: [id])
+    session   Session          @relation(fields: [sessionId], references: [id])
     reactions Reaction[]
-    createdAt DateTime   @default(now())
+    createdAt DateTime         @default(now())
+}
+
+model AddonSelection {
+    id        String   @id @default(cuid())
+    itemId    String
+    item      Item     @relation(fields: [itemId], references: [id])
+    addonId   String
+    name      String
+    price     Int
+    groupId   String
+    groupName String
+    createdAt DateTime @default(now())
 }
 
 model Reaction {
