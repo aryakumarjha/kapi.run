@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { createSession } from "@/lib/actions/session";
+import { createUser } from "@/lib/actions/user";
 import { getCachedApproxLocation } from "@/lib/position";
 import { cn } from "@/lib/utils";
 import { Restaurant } from "@/types/restaurants";
@@ -39,6 +40,8 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { useUserStore } from "@/lib/store/user";
+import { nanoid } from "nanoid";
 
 interface SessionCreateFormProps {
   restaurants: Restaurant[];
@@ -69,6 +72,7 @@ export default function SessionCreateForm({
   >("idle");
 
   const router = useRouter();
+  const setUser = useUserStore((state) => state.setUser);
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -89,6 +93,8 @@ export default function SessionCreateForm({
 
   const onSubmit = async (data: z.infer<typeof FormSchema>) => {
     const formData = new FormData();
+    const userId = nanoid();
+
     formData.append("creator-name", data["creator-name"]);
     formData.append("restaurant-id", data["restaurant-id"]);
     formData.append("cut-off-time", data.cutoffTime.toISOString());
@@ -100,8 +106,18 @@ export default function SessionCreateForm({
     );
     formData.append("lat", location?.lat?.toString() || "");
     formData.append("lng", location?.lng?.toString() || "");
+    formData.append("user-id", userId);
 
     const session = await createSession(formData);
+
+    // Create user and store in Zustand
+    await createUser({
+      id: userId,
+      name: data["creator-name"],
+      sessionId: session.id,
+    });
+
+    setUser(userId, data["creator-name"]);
     router.replace(`/${session.id}`);
   };
 

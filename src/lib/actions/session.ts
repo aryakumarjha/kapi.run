@@ -45,5 +45,8 @@ export const joinSession = async (form: FormData) => {
   if (!session) {
     throw new Error("Session not found");
   }
+
+  // No need to check for user here since we handle that on the client side
+  // This keeps the server action simple and allows client-side user state management
   return redirect(`/${sessionId}`);
 };
