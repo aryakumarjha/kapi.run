@@ -22,7 +22,6 @@ export default function SessionClient({ session, menu }: SessionClientProps) {
   useEffect(() => {
     const checkUser = async () => {
       if (!userId) {
-        console.log("No user ID found, showing name form");
         setNeedsNameForm(true);
         setIsLoading(false);
         return;
@@ -30,7 +29,6 @@ export default function SessionClient({ session, menu }: SessionClientProps) {
 
       try {
         const user = await getUserBySession(session.id, userId);
-        console.log("User found:", user);
         setNeedsNameForm(!user);
       } catch (error) {
         console.error("Error checking user:", error);
