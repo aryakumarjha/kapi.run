@@ -1,5 +1,5 @@
 import { useCart } from "@/lib/store/cart";
-import React from "react";
+import React, { useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -11,8 +11,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ShoppingCart, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { placeOrder } from "@/lib/actions/order";
+import { useUserStore } from "@/lib/store/user";
+import type { Session } from "@prisma/client";
 
-export const CartSummary = () => {
+export const CartSummary = ({ session }: { session: Session }) => {
   const { items, totalAmount: total, removeItemByIndex } = useCart();
 
   const formatInr = (price: number) => {
@@ -22,6 +25,30 @@ export const CartSummary = () => {
       minimumFractionDigits: 0,
     }).format(price / 100);
   };
+
+  const handleSubmit = useCallback(async () => {
+    await placeOrder({
+      sessionId: session.id,
+      userId: useUserStore.getState().id!,
+      total,
+      items: items.map((item) => ({
+        name: item.menuItem.name,
+        quantity: item.quantity,
+        note: item.note,
+        basePrice: item.menuItem.basePrice,
+        addons: item.selectedAddons
+          .map((group) =>
+            group.addons.map((addon) => ({
+              name: addon.name,
+              price: addon.price,
+              groupId: group.groupId,
+            }))
+          )
+          .flat(),
+        total: item.total,
+      })),
+    });
+  }, [items, session.id, total]);
 
   if (items.length === 0) {
     return (
@@ -93,7 +120,9 @@ export const CartSummary = () => {
           <span className="font-medium">Total Amount</span>
           <span className="font-medium">{formatInr(total)}</span>
         </div>
-        <Button className="w-full cursor-pointer">Place Order</Button>
+        <Button className="w-full cursor-pointer" onClick={handleSubmit}>
+          Place Order
+        </Button>
       </CardFooter>
     </Card>
   );

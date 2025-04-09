@@ -58,7 +58,7 @@ export default function SessionClient({ session, menu }: SessionClientProps) {
     <div className="space-y-4">
       <MenuHeader session={session} />
       <main className="@container/menu container mx-auto flex-1">
-        <Menu menu={menu} />
+        <Menu menu={menu} session={session} />
       </main>
     </div>
   );

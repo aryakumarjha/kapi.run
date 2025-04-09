@@ -10,5 +10,11 @@ export const fetchRestaurants = async (): Promise<Restaurant[]> => {
       rating: 4.8,
       provider: "swiggy",
     },
+    {
+      id: 588181,
+      name: "Third Wave Coffee",
+      rating: 4.7,
+      provider: "swiggy",
+    },
   ] satisfies Restaurant[];
 };

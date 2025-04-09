@@ -22,6 +22,7 @@ model Session {
     reactions      Reaction[]
     lat            Float?
     lng            Float?
+    Order          Order[]
 }
 
 model User {
@@ -32,6 +33,7 @@ model User {
     items     Item[]
     reactions Reaction[]
     createdAt DateTime   @default(now())
+    Order     Order[]
 }
 
 model Item {
@@ -71,4 +73,35 @@ model Reaction {
     item      Item     @relation(fields: [itemId], references: [id])
     session   Session  @relation(fields: [sessionId], references: [id])
     createdAt DateTime @default(now())
+}
+
+model Order {
+    id        String      @id @default(cuid())
+    sessionId String
+    userId    String
+    status    OrderStatus @default(PENDING)
+    total     Int
+    items     OrderItem[]
+    user      User        @relation(fields: [userId], references: [id])
+    session   Session     @relation(fields: [sessionId], references: [id])
+    createdAt DateTime    @default(now())
+}
+
+model OrderItem {
+    id        String   @id @default(cuid())
+    orderId   String
+    order     Order    @relation(fields: [orderId], references: [id])
+    name      String
+    quantity  Int
+    note      String?
+    basePrice Int
+    addons    Json?    @db.JsonB
+    total     Int
+    createdAt DateTime @default(now())
+}
+
+enum OrderStatus {
+    PENDING
+    CONFIRMED
+    CANCELLED
 }
