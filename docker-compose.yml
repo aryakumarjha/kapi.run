@@ -12,7 +12,7 @@ services:
       timeout: 5s
       retries: 5
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - kapi_postgres_data:/var/lib/postgresql/data
     networks:
       - kapi-network
 
@@ -30,7 +30,7 @@ services:
       - kapi-network
 
 volumes:
-  postgres_data:
+  kapi_postgres_data:
 
 networks:
   kapi-network:
