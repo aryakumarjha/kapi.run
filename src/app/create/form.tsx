@@ -5,6 +5,7 @@ import { Calendar } from "@/components/ui/calendar";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -24,15 +25,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { createSession } from "@/lib/actions/session";
+import { getCachedApproxLocation } from "@/lib/position";
 import { cn } from "@/lib/utils";
 import { Restaurant } from "@/types/restaurants";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
 import { addHours } from "date-fns/addHours";
-import { ArrowRight, CalendarIcon } from "lucide-react";
+import { ArrowRight, CalendarIcon, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { z } from "zod";
 
 interface SessionCreateFormProps {
@@ -49,11 +54,20 @@ const FormSchema = z.object({
   "restaurant-id": z.string().min(1, {
     message: "Restaurant is required.",
   }),
+  "use-precise-location": z.boolean(),
 });
 
 export default function SessionCreateForm({
   restaurants,
 }: SessionCreateFormProps) {
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(
+    null
+  );
+
+  const [locationStatus, setLocationStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
+
   const router = useRouter();
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -61,8 +75,17 @@ export default function SessionCreateForm({
       cutoffTime: addHours(new Date(), 1),
       "creator-name": "",
       "restaurant-id": restaurants[0]?.id.toString() || "",
+      "use-precise-location": false,
     },
   });
+
+  useEffect(() => {
+    const getLocation = async () => {
+      const { lat, lng } = await getCachedApproxLocation();
+      setLocation({ lat, lng });
+    };
+    getLocation();
+  }, []);
 
   const onSubmit = async (data: z.infer<typeof FormSchema>) => {
     const formData = new FormData();
@@ -75,6 +98,8 @@ export default function SessionCreateForm({
         (restaurant) => restaurant.id.toString() === data["restaurant-id"]
       )?.name || ""
     );
+    formData.append("lat", location?.lat?.toString() || "");
+    formData.append("lng", location?.lng?.toString() || "");
 
     const session = await createSession(formData);
     router.replace(`/${session.id}`);
@@ -106,6 +131,55 @@ export default function SessionCreateForm({
 
     form.setValue("cutoffTime", newDate);
   }
+
+  const requestLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser");
+      return;
+    }
+
+    setLocationStatus("loading");
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+        setLocationStatus("success");
+        toast.success("Location permission granted.");
+        form.setValue("use-precise-location", true);
+      },
+      (error) => {
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            toast.error(
+              "Location permission was denied. Please enable location services."
+            );
+            break;
+          case error.POSITION_UNAVAILABLE:
+            toast.error(
+              "Location information is unavailable. Please try again."
+            );
+            break;
+          case error.TIMEOUT:
+            toast.error(
+              "The request to get location timed out. Please try again."
+            );
+            break;
+          default:
+            toast.error("An unknown error occurred. Please try again later.");
+            break;
+        }
+        form.setValue("use-precise-location", false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 0,
+      }
+    );
+  };
 
   return (
     <Form {...form}>
@@ -267,6 +341,40 @@ export default function SessionCreateForm({
                 </PopoverContent>
                 <FormMessage />
               </Popover>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="use-precise-location"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+              <div className="space-y-1">
+                <FormLabel>Use precise location (Optional)</FormLabel>
+                <FormDescription className="text-xs">
+                  Sharing your location helps us show the correct menu items and
+                  pricing for your area. Some restaurants offer different menus
+                  based on location.
+                </FormDescription>
+              </div>
+              <FormControl>
+                {locationStatus === "loading" ? (
+                  <Loader2 className="size-12 animate-spin" />
+                ) : (
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={(val) => {
+                      if (val) {
+                        requestLocation();
+                      } else {
+                        setLocationStatus("idle");
+                        form.setValue("use-precise-location", false);
+                      }
+                    }}
+                  />
+                )}
+              </FormControl>
+              <FormMessage />
             </FormItem>
           )}
         />
