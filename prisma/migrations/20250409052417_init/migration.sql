@@ -1,14 +1,14 @@
--- CreateEnum
-CREATE TYPE "RestaurantProvider" AS ENUM ('ZOMATO', 'SWIGGY');
-
 -- CreateTable
 CREATE TABLE "Session" (
     "id" TEXT NOT NULL,
     "creatorName" TEXT NOT NULL,
+    "creatorId" TEXT NOT NULL,
     "restaurantId" TEXT NOT NULL,
     "restaurantName" TEXT NOT NULL,
     "cutoffTime" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "lat" DOUBLE PRECISION,
+    "lng" DOUBLE PRECISION,
 
     CONSTRAINT "Session_pkey" PRIMARY KEY ("id")
 );
@@ -47,17 +47,6 @@ CREATE TABLE "Reaction" (
 
     CONSTRAINT "Reaction_pkey" PRIMARY KEY ("id")
 );
-
--- CreateTable
-CREATE TABLE "Restaurant" (
-    "id" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
-    "rating" DOUBLE PRECISION,
-    "provider" "RestaurantProvider"
-);
-
--- CreateIndex
-CREATE UNIQUE INDEX "Restaurant_id_key" ON "Restaurant"("id");
 
 -- AddForeignKey
 ALTER TABLE "User" ADD CONSTRAINT "User_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "Session"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
