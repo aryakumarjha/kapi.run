@@ -162,7 +162,7 @@ export function ItemCustomizationDialog({
                 </div>
 
                 <div className="space-y-2">
-                  {group.maxAddons === 1 ? (
+                  {group.maxAddons === 1 || !group.maxAddons ? (
                     <RadioGroup
                       onValueChange={(value: string) => {
                         const addon = sortedChoices.find((c) => c.id === value);
@@ -177,13 +177,7 @@ export function ItemCustomizationDialog({
                           key={choice.id}
                           className="flex items-center space-x-2"
                         >
-                          <RadioGroupItem
-                            value={choice.id}
-                            id={choice.id}
-                            disabled={
-                              !choice.inStock || choice.isEnabled === false
-                            }
-                          />
+                          <RadioGroupItem value={choice.id} id={choice.id} />
                           <Label htmlFor={choice.id} className="flex-1">
                             {choice.name}
                           </Label>
@@ -208,13 +202,11 @@ export function ItemCustomizationDialog({
                             handleAddonChange(group.groupId, choice, true)
                           }
                           disabled={
-                            !choice.inStock ||
-                            choice.isEnabled === false ||
-                            (selectedAddons[group.groupId]?.length ===
+                            selectedAddons[group.groupId]?.length ===
                               group.maxAddons &&
-                              !selectedAddons[group.groupId]?.some(
-                                (a) => a.id === choice.id
-                              ))
+                            !selectedAddons[group.groupId]?.some(
+                              (a) => a.id === choice.id
+                            )
                           }
                         />
                         <Label htmlFor={choice.id} className="flex-1">

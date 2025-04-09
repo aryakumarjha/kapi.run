@@ -15,7 +15,6 @@ import { Search } from "lucide-react";
 
 export const MenuList = ({ menu }: { menu: Menu }) => {
   const [searchQuery, setSearchQuery] = React.useState("");
-  console.log("MenuList rendered with menu:", menu);
   const filteredMenu = React.useMemo(() => {
     if (!searchQuery.trim()) return menu;
 
