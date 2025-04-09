@@ -4,7 +4,7 @@ import { ThemeSwitcher } from "./theme-switcher";
 
 export function Header() {
   return (
-    <header className="border-b">
+    <header className="border-b sticky top-0 z-10 bg-background">
       <div className="container flex h-14 items-center mx-auto">
         <Link href="/" className="flex items-center gap-2 font-medium">
           <Coffee className="h-5 w-5" />
