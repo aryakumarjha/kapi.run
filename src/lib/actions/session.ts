@@ -8,6 +8,7 @@ export const createSession = async (form: FormData) => {
   const session = await prisma.session.create({
     data: {
       creatorName: form.get("creator-name") as string,
+      creatorId: form.get("user-id") as string,
       restaurantId: form.get("restaurant-id") as string,
       restaurantName: form.get("restaurant-name") as string,
       cutoffTime: new Date(form.get("cut-off-time") as string),
@@ -24,6 +25,9 @@ export const getSession = async (id: string) => {
   const session = await prisma.session.findFirst({
     where: {
       id,
+    },
+    include: {
+      users: true,
     },
   });
 
@@ -49,4 +53,15 @@ export const joinSession = async (form: FormData) => {
   // No need to check for user here since we handle that on the client side
   // This keeps the server action simple and allows client-side user state management
   return redirect(`/${sessionId}`);
+};
+
+export const isSessionCreator = async (sessionId: string, userId: string) => {
+  const session = await prisma.session.findFirst({
+    where: {
+      id: sessionId,
+      creatorId: userId,
+    },
+  });
+
+  return !!session;
 };
