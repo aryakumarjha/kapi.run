@@ -1,8 +1,8 @@
 const getApproxLocation = async () => {
-  const res = await fetch("http://ip-api.com/json/");
+  const res = await fetch("https://get.geojs.io/v1/ip/geo.json");
   if (res.ok) {
     const data = await res.json();
-    return { lat: data.lat, lng: data.lon };
+    return { lat: data.latitude, lng: data.longitude };
   }
   return { lat: null, lng: null };
 };
