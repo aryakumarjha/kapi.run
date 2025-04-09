@@ -13,6 +13,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "./ui/label";
 import { useCart } from "@/lib/store/cart";
 import { Badge } from "./ui/badge";
+import { Plus, Minus } from "lucide-react";
 
 interface ItemCustomizationDialogProps {
   item: SimplifiedMenuItem;
@@ -25,29 +26,33 @@ export function ItemCustomizationDialog({
   open,
   onClose,
 }: ItemCustomizationDialogProps) {
-  // Sort and preselect lowest price addons when dialog opens
+  // Sort choices by price (lowest to highest) and only preselect if required
   const [selectedAddons, setSelectedAddons] = useState<{
     [groupId: string]: Addon[];
   }>(() => {
     const initialSelections: { [groupId: string]: Addon[] } = {};
 
     item.customizations?.forEach((group) => {
-      const sortedChoices = [...group.choices].sort(
-        (a, b) => a.price - b.price
-      );
-      // Only preselect if there's a minimum requirement and the first choice is available
-      if (
-        group.minAddons &&
-        group.minAddons > 0 &&
-        sortedChoices[0]?.inStock !== false
-      ) {
-        initialSelections[group.groupId] = [sortedChoices[0]];
+      // Only preselect if there's a minimum requirement
+      if (group.minAddons && group.minAddons > 0) {
+        const availableChoices = group.choices.filter(
+          (choice) => choice.inStock !== false && choice.isEnabled !== false
+        );
+
+        if (availableChoices.length > 0) {
+          // Sort by price ascending and select the cheapest available option
+          const sortedChoices = [...availableChoices].sort(
+            (a, b) => (a.price || 0) - (b.price || 0)
+          );
+          initialSelections[group.groupId] = [sortedChoices[0]];
+        }
       }
     });
 
     return initialSelections;
   });
 
+  const [quantity, setQuantity] = useState(1);
   const { addItem } = useCart();
 
   const formatInr = (price: number) => {
@@ -102,19 +107,20 @@ export function ItemCustomizationDialog({
 
     addItem({
       menuItem: item,
-      quantity: 1,
+      quantity,
       selectedAddons: formattedAddons,
     });
 
     onClose();
     setSelectedAddons({});
+    setQuantity(1);
   };
 
   const calculateTotal = () => {
     const addonsTotal = Object.values(selectedAddons)
       .flat()
       .reduce((sum, addon) => sum + (isNaN(addon.price) ? 0 : addon.price), 0);
-    return item.basePrice + addonsTotal;
+    return (item.basePrice + addonsTotal) * quantity;
   };
 
   return (
@@ -136,9 +142,12 @@ export function ItemCustomizationDialog({
 
         <div className="space-y-6">
           {item.customizations?.map((group) => {
-            const sortedChoices = [...group.choices].sort(
-              (a, b) => a.price - b.price
-            );
+            // Sort by price ascending (lowest to highest)
+            const sortedChoices = [...group.choices].sort((a, b) => {
+              const priceA = isNaN(a.price) ? 0 : a.price;
+              const priceB = isNaN(b.price) ? 0 : b.price;
+              return priceA - priceB;
+            });
             return (
               <div key={group.groupId} className="space-y-3">
                 <div className="flex items-center gap-2">
@@ -223,9 +232,29 @@ export function ItemCustomizationDialog({
           })}
         </div>
 
-        <div className="flex items-center justify-between mt-6">
+        <div className="flex items-center justify-between mt-6 gap-4">
           <div className="font-medium">
             Total: {formatInr(calculateTotal())}
+          </div>
+          <span className="flex-1" />
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              disabled={quantity <= 1}
+              onClick={() => setQuantity((prev) => prev - 1)}
+              aria-label="Decrease quantity"
+            >
+              <Minus />
+            </Button>
+            <span className="w-8 text-center">{quantity}</span>
+            <Button
+              size="icon"
+              onClick={() => setQuantity((prev) => prev + 1)}
+              aria-label="Increase quantity"
+            >
+              <Plus />
+            </Button>
           </div>
           <Button onClick={handleAddToCart}>Add to Cart</Button>
         </div>
