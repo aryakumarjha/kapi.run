@@ -21,6 +21,7 @@ export default function SessionClient({ session, menu }: SessionClientProps) {
 
   useEffect(() => {
     const checkUser = async () => {
+      // await new Promise((resolve) => setTimeout(resolve, 500)); // Simulate a delay
       if (!userId) {
         setNeedsNameForm(true);
         setIsLoading(false);
@@ -30,6 +31,7 @@ export default function SessionClient({ session, menu }: SessionClientProps) {
       try {
         const user = await getUserBySession(session.id, userId);
         if (!user) {
+          console.log("User not found for session:", session.id);
           setNeedsNameForm(true);
         }
       } catch (error) {
@@ -39,6 +41,8 @@ export default function SessionClient({ session, menu }: SessionClientProps) {
         setIsLoading(false);
       }
     };
+
+    console.log("Checking user for session:", session.id);
 
     checkUser();
   }, [session.id, userId]);
