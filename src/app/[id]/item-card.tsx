@@ -9,6 +9,9 @@ export const MenuItemCard = ({ item }: { item: SimplifiedMenuItem }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const formatInr = (price: number) => {
+    if (isNaN(price) || price <= 0) {
+      return "N/A";
+    }
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: "INR",
@@ -27,7 +30,7 @@ export const MenuItemCard = ({ item }: { item: SimplifiedMenuItem }) => {
         onClick={handleItemClick}
       >
         <div className="flex justify-between">
-          <div className="flex-1">
+          <div className="flex-1 flex flex-col justify-between">
             <div className="flex items-center gap-2">
               <h3 className="font-medium">{item.name}</h3>
               {item.isVeg !== undefined && (

@@ -50,7 +50,7 @@ export const CartSummary = () => {
       <ScrollArea className="max-h-1/2">
         <CardContent className="space-y-4">
           {items.map((item, index) => (
-            <div key={item.id + index.toString()} className="space-y-2">
+            <div key={item.id} className="space-y-2">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
