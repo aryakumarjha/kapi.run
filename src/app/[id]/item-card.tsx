@@ -12,7 +12,7 @@ export const MenuItemCard = ({ item }: { item: SimplifiedMenuItem }) => {
   };
 
   return (
-    <Card className="p-4">
+    <Card className="px-6 py-4">
       <div className="flex justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-2">
