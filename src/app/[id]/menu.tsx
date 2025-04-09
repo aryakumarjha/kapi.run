@@ -82,7 +82,7 @@ const MenuList = ({ menu }: { menu: Record<string, SimplifiedMenuItem[]> }) => {
                   <AccordionTrigger className="py-3 hover:no-underline cursor-pointer">
                     <div className="flex items-center text-left">
                       <span className="font-medium">{category}</span>
-                      <Badge className="ml-2 text-neutral-600 border-0">
+                      <Badge className="ml-2">
                         {filteredMenu[category].length}
                       </Badge>
                     </div>
