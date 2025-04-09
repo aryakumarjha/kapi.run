@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { addHours, isAfter } from "date-fns";
+import { redirect } from "next/navigation";
 
 export const createSession = async (form: FormData) => {
   const session = await prisma.session.create({
@@ -35,4 +36,14 @@ export const getSession = async (id: string) => {
   }
 
   return session;
+};
+
+export const joinSession = async (form: FormData) => {
+  const link = form.get("kapi-session-link") as string;
+  const sessionId = link.split("/").pop() as string;
+  const session = await getSession(sessionId);
+  if (!session) {
+    throw new Error("Session not found");
+  }
+  return redirect(`/${sessionId}`);
 };

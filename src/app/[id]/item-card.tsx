@@ -1,3 +1,4 @@
+import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { SimplifiedMenuItem } from "@/types/menu";
 import Image from "next/image";
@@ -12,7 +13,7 @@ export const MenuItemCard = ({ item }: { item: SimplifiedMenuItem }) => {
   };
 
   return (
-    <Card className="px-6 py-4">
+    <Card className="px-6 py-4 cursor-pointer hover:bg-muted transition-colors duration-200">
       <div className="flex justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-2">
@@ -24,6 +25,12 @@ export const MenuItemCard = ({ item }: { item: SimplifiedMenuItem }) => {
                 }`}
               />
             )}
+            {Array.isArray(item.customizations) &&
+              item.customizations.length > 0 && (
+                <Badge variant="outline" className="text-xs">
+                  Customizable
+                </Badge>
+              )}
           </div>
           {item.description && (
             <p className="text-sm text-muted-foreground mt-1">

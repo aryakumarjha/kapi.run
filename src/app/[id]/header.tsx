@@ -28,7 +28,7 @@ export default function MenuHeader({ session }: MenuHeaderProps) {
   };
 
   return (
-    <div className="border-b sticky top-0 z-10">
+    <div className="border-b sticky top-0 z-10 bg-background">
       <div className="container mx-auto py-3">
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">

@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Coffee } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { joinSession } from "@/lib/actions/session";
 
 export default function Home() {
   return (
@@ -40,7 +43,7 @@ export default function Home() {
             </div>
           </div>
 
-          <form name="join-session">
+          <form name="join-session" action={joinSession}>
             <div className="flex gap-2">
               <Label htmlFor="kapi-session-link" className="sr-only">
                 Session Link
