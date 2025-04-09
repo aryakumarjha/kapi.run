@@ -1,7 +1,7 @@
-import MenuList from "@/components/menu-list";
-import { getMenu } from "@/lib/actions/menu";
 import { getSession } from "@/lib/actions/session";
 import { notFound } from "next/navigation";
+import Menu from "./menu";
+import MenuHeader from "./header";
 
 export default async function Page({
   params,
@@ -13,6 +13,13 @@ export default async function Page({
   if (!session) {
     throw notFound();
   }
-  const menu = await getMenu(session!.restaurantId, 12.9753, 77.591);
-  return <div></div>;
+
+  return (
+    <>
+      <MenuHeader session={session} />
+      <main className="@container/menu container mx-auto flex-1">
+        <Menu session={session} />{" "}
+      </main>
+    </>
+  );
 }

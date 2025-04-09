@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { isAfter } from "date-fns";
 
 export const createSession = async (form: FormData) => {
   const session = await prisma.session.create({
@@ -22,6 +23,14 @@ export const getSession = async (id: string) => {
       id,
     },
   });
+
+  // check for cutoff time
+  if (session && session.cutoffTime) {
+    const currentTime = new Date();
+    if (isAfter(currentTime, session.cutoffTime)) {
+      return null; // Session has expired
+    }
+  }
 
   return session;
 };

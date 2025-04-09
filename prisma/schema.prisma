@@ -19,6 +19,8 @@ model Session {
     users          User[]
     items          Item[]
     reactions      Reaction[]
+    lat            Float?
+    lng            Float?
 }
 
 model User {
