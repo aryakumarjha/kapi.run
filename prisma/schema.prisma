@@ -37,18 +37,31 @@ model User {
 }
 
 model Item {
-    id        String           @id @default(cuid())
+    id        String             @id @default(cuid())
     name      String
-    quantity  Int              @default(1)
+    quantity  Int                @default(1)
     note      String?
     userId    String
     sessionId String
     basePrice Int
+    variants  VariantSelection[]
     addons    AddonSelection[]
-    user      User             @relation(fields: [userId], references: [id])
-    session   Session          @relation(fields: [sessionId], references: [id])
+    user      User               @relation(fields: [userId], references: [id])
+    session   Session            @relation(fields: [sessionId], references: [id])
     reactions Reaction[]
-    createdAt DateTime         @default(now())
+    createdAt DateTime           @default(now())
+}
+
+model VariantSelection {
+    id        String   @id @default(cuid())
+    itemId    String
+    item      Item     @relation(fields: [itemId], references: [id])
+    variantId String
+    name      String
+    price     Int
+    groupId   String
+    groupName String
+    createdAt DateTime @default(now())
 }
 
 model AddonSelection {
@@ -95,6 +108,7 @@ model OrderItem {
     quantity  Int
     note      String?
     basePrice Int
+    variants  Json?    @db.JsonB
     addons    Json?    @db.JsonB
     total     Int
     createdAt DateTime @default(now())

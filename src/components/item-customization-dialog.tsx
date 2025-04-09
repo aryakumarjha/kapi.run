@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
-import { SimplifiedMenuItem, type Addon } from "@/types/menu";
+import { SimplifiedMenuItem, Variant, type Addon } from "@/types/menu";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -26,13 +26,46 @@ export function ItemCustomizationDialog({
   open,
   onClose,
 }: ItemCustomizationDialogProps) {
-  // Sort choices by price (lowest to highest) and only preselect if required
+  // Track selected variants
+  const [selectedVariants, setSelectedVariants] = useState<{
+    [groupId: string]: Variant;
+  }>(() => {
+    const initialVariants: { [groupId: string]: Variant } = {};
+
+    item.variants?.forEach((group) => {
+      const availableVariants = group.variants.filter(
+        (variant) => variant.inStock !== false && variant.isEnabled !== false
+      );
+
+      if (availableVariants.length > 0) {
+        // If there's a default variant, use it
+        if (group.defaultVariantId) {
+          const defaultVariant = availableVariants.find(
+            (v) => v.id === group.defaultVariantId
+          );
+          if (defaultVariant) {
+            initialVariants[group.groupId] = defaultVariant;
+            return;
+          }
+        }
+        // Otherwise select the cheapest available option
+        const sortedVariants = [...availableVariants].sort(
+          (a, b) => (a.price || 0) - (b.price || 0)
+        );
+        initialVariants[group.groupId] = sortedVariants[0];
+      }
+    });
+
+    return initialVariants;
+  });
+
+  // Track selected addons
   const [selectedAddons, setSelectedAddons] = useState<{
     [groupId: string]: Addon[];
   }>(() => {
     const initialSelections: { [groupId: string]: Addon[] } = {};
 
-    item.customizations?.forEach((group) => {
+    item.addons?.forEach((group) => {
       // Only preselect if there's a minimum requirement
       if (group.minAddons && group.minAddons > 0) {
         const availableChoices = group.choices.filter(
@@ -64,6 +97,13 @@ export function ItemCustomizationDialog({
       currency: "INR",
       minimumFractionDigits: 0,
     }).format(price / 100);
+  };
+
+  const handleVariantChange = (groupId: string, variant: Variant) => {
+    setSelectedVariants((prev) => ({
+      ...prev,
+      [groupId]: variant,
+    }));
   };
 
   const handleAddonChange = (
@@ -98,6 +138,15 @@ export function ItemCustomizationDialog({
   };
 
   const handleAddToCart = () => {
+    // Format variants
+    const formattedVariants = Object.entries(selectedVariants).map(
+      ([groupId, variant]) => ({
+        groupId,
+        variant,
+      })
+    );
+
+    // Format addons
     const formattedAddons = Object.entries(selectedAddons).map(
       ([groupId, addons]) => ({
         groupId,
@@ -108,19 +157,32 @@ export function ItemCustomizationDialog({
     addItem({
       menuItem: item,
       quantity,
+      selectedVariants: formattedVariants,
       selectedAddons: formattedAddons,
     });
 
     onClose();
+    setSelectedVariants({});
     setSelectedAddons({});
     setQuantity(1);
   };
 
   const calculateTotal = () => {
+    // Calculate variants total
+    const variantsTotal = Object.values(selectedVariants).reduce(
+      (sum, variant) => sum + (isNaN(variant.price) ? 0 : variant.price),
+      0
+    );
+
+    // Calculate addons total
     const addonsTotal = Object.values(selectedAddons)
       .flat()
       .reduce((sum, addon) => sum + (isNaN(addon.price) ? 0 : addon.price), 0);
-    return (item.basePrice + addonsTotal) * quantity;
+
+    // If any variant is selected, use variants total as base price, otherwise use item's base price
+    const basePrice =
+      Object.keys(selectedVariants).length > 0 ? variantsTotal : item.basePrice;
+    return (basePrice + addonsTotal) * quantity;
   };
 
   return (
@@ -141,8 +203,56 @@ export function ItemCustomizationDialog({
         </DialogHeader>
 
         <div className="space-y-6">
-          {item.customizations?.map((group) => {
-            // Sort by price ascending (lowest to highest)
+          {/* Variants Section */}
+          {item.variants?.map((group) => {
+            const sortedVariants = [...group.variants].sort((a, b) => {
+              const priceA = isNaN(a.price) ? 0 : a.price;
+              const priceB = isNaN(b.price) ? 0 : b.price;
+              return priceA - priceB;
+            });
+            return (
+              <div key={group.groupId} className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-medium">{group.groupName}</h3>
+                  <Badge variant="secondary" className="text-xs">
+                    Required
+                  </Badge>
+                </div>
+
+                <div className="space-y-2">
+                  <RadioGroup
+                    onValueChange={(value: string) => {
+                      const variant = sortedVariants.find(
+                        (v) => v.id === value
+                      );
+                      if (variant) {
+                        handleVariantChange(group.groupId, variant);
+                      }
+                    }}
+                    value={selectedVariants[group.groupId]?.id}
+                  >
+                    {sortedVariants.map((variant) => (
+                      <div
+                        key={variant.id}
+                        className="flex items-center space-x-2"
+                      >
+                        <RadioGroupItem value={variant.id} id={variant.id} />
+                        <Label htmlFor={variant.id} className="flex-1">
+                          {variant.name}
+                        </Label>
+                        <span className="text-sm text-muted-foreground">
+                          {formatInr(variant.price)}
+                        </span>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Addons Section */}
+          {item.addons?.map((group) => {
             const sortedChoices = [...group.choices].sort((a, b) => {
               const priceA = isNaN(a.price) ? 0 : a.price;
               const priceB = isNaN(b.price) ? 0 : b.price;

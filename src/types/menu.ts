@@ -1,3 +1,19 @@
+export interface Variant {
+  id: string;
+  name: string;
+  price: number;
+  inStock?: boolean;
+  isVeg?: boolean;
+  isEnabled?: boolean;
+}
+
+export interface VariantGroup {
+  groupId: string;
+  groupName: string;
+  variants: Variant[];
+  defaultVariantId?: string;
+}
+
 export interface Addon {
   id: string;
   name: string;
@@ -22,7 +38,8 @@ export interface SimplifiedMenuItem {
   isVeg?: boolean;
   imageUrl?: string;
   basePrice: number;
-  customizations?: AddonGroup[];
+  variants?: VariantGroup[];
+  addons?: AddonGroup[];
 }
 
 export interface MenuCategory {

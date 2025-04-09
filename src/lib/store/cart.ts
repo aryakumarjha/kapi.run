@@ -1,11 +1,15 @@
 import { create } from "zustand";
-import { type SimplifiedMenuItem, type Addon } from "@/types/menu";
+import { type SimplifiedMenuItem, type Addon, Variant } from "@/types/menu";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { nanoid } from "nanoid";
 
 interface CartItem {
   menuItem: SimplifiedMenuItem;
   quantity: number;
+  selectedVariants: {
+    groupId: string;
+    variant: Variant;
+  }[];
   selectedAddons: {
     groupId: string;
     addons: Addon[];
@@ -40,7 +44,12 @@ export const useCart = create<CartStore>()(
           id: nanoid(),
           // calculate total with addons
           total:
-            defaultZero(item.menuItem.basePrice) +
+            (item.selectedVariants.length > 0
+              ? item.selectedVariants.reduce(
+                  (sum, { variant }) => sum + defaultZero(variant.price),
+                  0
+                )
+              : defaultZero(item.menuItem.basePrice)) +
             item.selectedAddons.reduce(
               (acc, group) =>
                 acc +

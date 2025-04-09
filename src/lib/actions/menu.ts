@@ -7,6 +7,8 @@ import {
   SimplifiedMenuItem,
   AddonGroup,
   Addon,
+  VariantGroup,
+  Variant,
 } from "@/types/menu";
 import { cache } from "react";
 
@@ -52,16 +54,17 @@ const processDish = (info: any): SimplifiedMenuItem | null => {
     basePrice,
   };
 
+  // Handle variants
   if (
     info.variantsV2?.variantGroups &&
     Array.isArray(info.variantsV2.variantGroups)
   ) {
-    dish.customizations = info.variantsV2.variantGroups.map(
-      (group: any): AddonGroup => ({
+    dish.variants = info.variantsV2.variantGroups.map(
+      (group: any): VariantGroup => ({
         groupId: group.groupId?.toString() || "",
         groupName: group.name || "",
-        choices: (group.variations || []).map(
-          (variation: any): Addon => ({
+        variants: (group.variations || []).map(
+          (variation: any): Variant => ({
             id: variation.id?.toString() || "",
             name: variation.name || "",
             price: variation.price ? Math.floor(variation.price) : 0,
@@ -76,6 +79,36 @@ const processDish = (info: any): SimplifiedMenuItem | null => {
             isEnabled:
               typeof variation.isEnabled !== "undefined"
                 ? Boolean(variation.isEnabled)
+                : undefined,
+          })
+        ),
+        defaultVariantId: group.defaultVariationId?.toString(),
+      })
+    );
+  }
+
+  // Handle addons
+  if (info.addons && Array.isArray(info.addons)) {
+    dish.addons = info.addons.map(
+      (group: any): AddonGroup => ({
+        groupId: group.groupId?.toString() || "",
+        groupName: group.name || "",
+        choices: (group.choices || []).map(
+          (addon: any): Addon => ({
+            id: addon.id?.toString() || "",
+            name: addon.name || "",
+            price: addon.price ? Math.floor(addon.price) : 0,
+            inStock:
+              typeof addon.inStock !== "undefined"
+                ? Boolean(addon.inStock)
+                : undefined,
+            isVeg:
+              typeof addon.isVeg !== "undefined"
+                ? Boolean(addon.isVeg)
+                : undefined,
+            isEnabled:
+              typeof addon.isEnabled !== "undefined"
+                ? Boolean(addon.isEnabled)
                 : undefined,
           })
         ),
