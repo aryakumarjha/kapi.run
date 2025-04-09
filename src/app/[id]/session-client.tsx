@@ -30,6 +30,7 @@ export default function SessionClient({ session, menu }: SessionClientProps) {
 
       try {
         const user = await getUserBySession(session.id, userId);
+        console.log("User found:", user);
         if (!user) {
           console.log("User not found for session:", session.id);
           setNeedsNameForm(true);
