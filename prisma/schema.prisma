@@ -12,7 +12,7 @@ datasource db {
 model Session {
     id             String     @id @default(cuid())
     creatorName    String
-    creatorId      String
+    creatorId      String     @default("")
     restaurantId   String
     restaurantName String
     cutoffTime     DateTime?
