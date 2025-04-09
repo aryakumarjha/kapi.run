@@ -66,6 +66,7 @@ export const MenuItemCard = ({ item }: { item: SimplifiedMenuItem }) => {
       </Card>
 
       <ItemCustomizationDialog
+        key={item.id}
         item={item}
         open={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
