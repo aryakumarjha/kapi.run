@@ -1,162 +1,244 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use server";
 
-import { MenuResponse, SimplifiedMenuItem } from "@/types/menu";
+import {
+  MenuCategory,
+  MenuResponse,
+  SimplifiedMenuItem,
+  AddonGroup,
+  Addon,
+} from "@/types/menu";
 import { cache } from "react";
 
-const getImageUrl = (imageId?: string) => {
-  if (!imageId) return undefined;
-  return `https://media-assets.swiggy.com/swiggy/image/upload/fl_lossy,f_auto,q_auto,w_300,h_300,c_fit/${imageId}`;
+const getImageUrl = (imageId?: string): string | undefined =>
+  imageId
+    ? `https://media-assets.swiggy.com/swiggy/image/upload/fl_lossy,f_auto,q_auto,w_300,h_300,c_fit/${imageId}`
+    : undefined;
+
+// Helper to extract price from a dish info object
+const getBasePrice = (info: any): number => {
+  let basePrice = 0;
+  if (info.price) {
+    basePrice = Math.floor(info.price);
+  } else if (info.defaultPrice) {
+    basePrice = Math.floor(info.defaultPrice);
+  } else if (
+    info.variantsV2?.pricingModels?.length > 0 &&
+    info.variantsV2.pricingModels[0]?.price
+  ) {
+    basePrice = Math.floor(info.variantsV2.pricingModels[0].price);
+  } else if (
+    info.variants?.variantGroups?.length > 0 &&
+    info.variants.variantGroups[0]?.variations?.length > 0 &&
+    info.variants.variantGroups[0].variations[0]?.price
+  ) {
+    basePrice = Math.floor(info.variants.variantGroups[0].variations[0].price);
+  }
+  return basePrice;
+};
+
+// Helper to process a dish item
+const processDish = (info: any): SimplifiedMenuItem | null => {
+  if (!info?.name) return null;
+  const basePrice = getBasePrice(info);
+  if (basePrice === 0) return null;
+
+  const dish: SimplifiedMenuItem = {
+    id: info.id?.toString() || "",
+    name: info.name,
+    description: info.description || undefined,
+    isVeg: typeof info.isVeg !== "undefined" ? Boolean(info.isVeg) : undefined,
+    imageUrl: getImageUrl(info.imageId),
+    basePrice,
+  };
+
+  if (
+    info.variantsV2?.variantGroups &&
+    Array.isArray(info.variantsV2.variantGroups)
+  ) {
+    dish.customizations = info.variantsV2.variantGroups.map(
+      (group: any): AddonGroup => ({
+        groupId: group.groupId?.toString() || "",
+        groupName: group.name || "",
+        choices: (group.variations || []).map(
+          (variation: any): Addon => ({
+            id: variation.id?.toString() || "",
+            name: variation.name || "",
+            price: variation.price ? Math.floor(variation.price) : 0,
+            inStock:
+              typeof variation.inStock !== "undefined"
+                ? Boolean(variation.inStock)
+                : undefined,
+            isVeg:
+              typeof variation.isVeg !== "undefined"
+                ? Boolean(variation.isVeg)
+                : undefined,
+            isEnabled:
+              typeof variation.isEnabled !== "undefined"
+                ? Boolean(variation.isEnabled)
+                : undefined,
+          })
+        ),
+        maxAddons: group.maxAddons,
+        minAddons: group.minAddons,
+      })
+    );
+  }
+  return dish;
+};
+
+// Processes category cards based on given cardData. Returns a MenuCategory object.
+const processCategoryCard = (cardData: any): MenuCategory | null => {
+  const categoryName = cardData.title || "Uncategorized";
+  const category: MenuCategory = {
+    name: categoryName,
+    imageUrl: getImageUrl(cardData.imageId),
+    items: [],
+  };
+
+  // Process immediate items (for both normal and nested categories)
+  (cardData.itemCards || []).forEach((wrapper: any) => {
+    const info = wrapper?.card?.info || wrapper?.info;
+    const dish = processDish(info);
+    if (dish) category.items.push(dish);
+  });
+
+  // Handle nested subcategories if present
+  if (
+    cardData["@type"]?.includes("NestedItemCategory") &&
+    Array.isArray(cardData.categories)
+  ) {
+    category.subcategories = {};
+    cardData.categories.forEach((subCat: any) => {
+      if (!subCat?.title) return;
+      const subcatName = subCat.title;
+      category.subcategories![subcatName] = [];
+      (subCat.itemCards || []).forEach((wrapper: any) => {
+        const info = wrapper?.card?.info || wrapper?.info;
+        const dish = processDish(info);
+        if (dish) category.subcategories![subcatName].push(dish);
+      });
+      if (category.subcategories![subcatName].length === 0) {
+        delete category.subcategories![subcatName];
+      }
+    });
+    if (Object.keys(category.subcategories).length === 0) {
+      delete category.subcategories;
+    }
+  }
+  return category;
+};
+
+// Processes carousel (recommended) cards.
+const processCarouselCard = (cardData: any): MenuCategory | null => {
+  const categoryName = cardData.title || "Recommended";
+  const category: MenuCategory = {
+    name: categoryName,
+    imageUrl: getImageUrl(cardData.imageId),
+    items: [],
+  };
+  (cardData.carousel || []).forEach((item: any) => {
+    const dishInfo = item?.dish?.info;
+    const dish = processDish(dishInfo);
+    if (dish) category.items.push(dish);
+  });
+  return category;
 };
 
 export const getMenu = cache(
-  async (restaurantId: string, lat: number, lng: number) => {
+  async (
+    restaurantId: string,
+    lat: number,
+    lng: number
+  ): Promise<MenuResponse> => {
     try {
-      const response = await fetch(
-        `https://www.swiggy.com/dapi/menu/pl?page-type=REGULAR_MENU&complete-menu=true&lat=${lat}&lng=${lng}&restaurantId=${restaurantId}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-            "User-Agent":
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
-          },
-        }
-      );
-
+      const url = `https://www.swiggy.com/dapi/menu/pl?page-type=REGULAR_MENU&complete-menu=true&lat=${lat}&lng=${lng}&restaurantId=${restaurantId}`;
+      const response = await fetch(url, {
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
+        },
+      });
       if (!response.ok) {
         throw new Error(`Failed to fetch menu: ${response.statusText}`);
       }
-
       const data = await response.json();
       const cards = data?.data?.cards || [];
 
-      // Find restaurant info
-      const restaurantCard = cards.find(
-        (card: any) =>
+      // Extract restaurant name.
+      let restaurantName = "Unknown Restaurant";
+      for (const card of cards) {
+        if (
           card?.card?.card?.["@type"] ===
           "type.googleapis.com/swiggy.presentation.food.v2.Restaurant"
-      );
-      const restaurantName =
-        restaurantCard?.card?.card?.info?.name || "Unknown Restaurant";
-
-      // Find menu items
-      const menuCard = cards.find((card: any) =>
-        card?.groupedCard?.cardGroupMap?.REGULAR?.cards?.some((card: any) =>
-          card?.card?.card?.["@type"]?.includes("ItemCategory")
-        )
-      );
-
-      const menu: { [category: string]: SimplifiedMenuItem[] } = {};
-      const menuCards =
-        menuCard?.groupedCard?.cardGroupMap?.REGULAR?.cards || [];
-
-      // Process menu items
-      for (const card of menuCards) {
-        if (
-          card?.card?.card?.["@type"]?.includes("ItemCategory") ||
-          card?.card?.card?.["@type"]?.includes("NestedItemCategory")
         ) {
-          const categoryData = card.card.card;
-
-          // Handle nested categories
-          if (categoryData.categories) {
-            for (const category of categoryData.categories) {
-              if (!menu[category.title]) {
-                menu[category.title] = [];
-              }
-
-              category.itemCards?.forEach((itemCard: any) => {
-                const item = itemCard?.card?.info;
-                if (item) {
-                  const customizations = item.addons?.map(
-                    (addonGroup: any) => ({
-                      groupId: addonGroup.groupId,
-                      groupName: addonGroup.groupName,
-                      choices:
-                        addonGroup.choices?.map((choice: any) => ({
-                          id: choice.id,
-                          name: choice.name,
-                          price: choice.price,
-                          inStock: choice.inStock,
-                          isVeg: choice.isVeg,
-                          isEnabled: choice.isEnabled,
-                        })) || [],
-                      maxAddons: addonGroup.maxAddons,
-                      minAddons: addonGroup.minAddons,
-                    })
-                  );
-
-                  menu[category.title].push({
-                    id: item.id,
-                    name: item.name,
-                    description: item.description,
-                    isVeg: item.isVeg === 1,
-                    imageUrl: getImageUrl(item.imageId),
-                    basePrice: item.price || 0,
-                    customizations: customizations?.length
-                      ? customizations
-                      : undefined,
-                  });
-                }
-              });
-            }
-          }
-          // Handle flat categories
-          else if (categoryData.itemCards) {
-            if (!menu[categoryData.title]) {
-              menu[categoryData.title] = [];
-            }
-
-            categoryData.itemCards.forEach((itemCard: any) => {
-              const item = itemCard?.card?.info;
-              if (item) {
-                const customizations = item.addons?.map((addonGroup: any) => ({
-                  groupId: addonGroup.groupId,
-                  groupName: addonGroup.groupName,
-                  choices:
-                    addonGroup.choices?.map((choice: any) => ({
-                      id: choice.id,
-                      name: choice.name,
-                      price: choice.price,
-                      inStock: choice.inStock,
-                      isVeg: choice.isVeg,
-                      isEnabled: choice.isEnabled,
-                    })) || [],
-                  maxAddons: addonGroup.maxAddons,
-                  minAddons: addonGroup.minAddons,
-                }));
-
-                menu[categoryData.title].push({
-                  id: item.id,
-                  name: item.name,
-                  description: item.description,
-                  isVeg: item.isVeg === 1,
-                  imageUrl: getImageUrl(item.imageId),
-                  basePrice: item.price || 0,
-                  customizations: customizations?.length
-                    ? customizations
-                    : undefined,
-                });
-              }
-            });
-          }
+          restaurantName = card.card.card.info.name;
+          break;
         }
       }
+      if (restaurantName === "Unknown Restaurant") {
+        const txt = cards.find((card: any) =>
+          card?.card?.card?.["@type"]?.includes("TextBoxV2")
+        );
+        if (txt?.card?.card?.text) restaurantName = txt.card.card.text;
+      }
 
-      // Remove empty categories
-      Object.keys(menu).forEach((category) => {
-        if (menu[category].length === 0) {
-          delete menu[category];
+      // Build menu from grouped cards.
+      const menu: Record<string, MenuCategory> = {};
+      let menuCards: any[] = [];
+      const groupedCard = cards.find(
+        (card: any) => card.groupedCard?.cardGroupMap?.REGULAR
+      );
+      if (groupedCard) {
+        menuCards = groupedCard.groupedCard.cardGroupMap.REGULAR.cards || [];
+      }
+
+      // Process each menu card.
+      menuCards.forEach((groupCard: any) => {
+        if (!groupCard?.card?.card) return;
+        const cardData = groupCard.card.card;
+        const cardType = cardData["@type"] || "";
+
+        if (
+          cardType.includes("ItemCategory") ||
+          cardType.includes("MenuCategory") ||
+          cardType.includes("NestedItemCategory")
+        ) {
+          const category = processCategoryCard(cardData);
+          if (category) {
+            menu[category.name] = category;
+          }
+        } else if (cardType.includes("MenuCarousel")) {
+          const carouselCategory = processCarouselCard(cardData);
+          if (carouselCategory) {
+            menu[carouselCategory.name] = carouselCategory;
+          }
         }
       });
 
-      const response_data: MenuResponse = {
-        restaurantName,
-        menu,
-      };
+      // Combine sorting and cleanup: sort items and remove empty categories.
+      Object.keys(menu).forEach((key) => {
+        const cat = menu[key];
+        if (cat.items && cat.items.length > 0) {
+          cat.items.sort((a, b) => a.name.localeCompare(b.name));
+        }
+        if (cat.subcategories) {
+          Object.values(cat.subcategories).forEach((itemList) => {
+            itemList.sort((a, b) => a.name.localeCompare(b.name));
+          });
+        }
+        if (
+          (!cat.items || cat.items.length === 0) &&
+          (!cat.subcategories || Object.keys(cat.subcategories).length === 0)
+        ) {
+          delete menu[key];
+        }
+      });
 
-      return response_data;
+      const menuResponse: MenuResponse = { restaurantName, menu };
+      return menuResponse;
     } catch (error) {
       console.error("Error fetching menu:", error);
       throw error;

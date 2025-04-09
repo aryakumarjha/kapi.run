@@ -1,4 +1,4 @@
-import { SimplifiedMenuItem } from "@/types/menu";
+import { Menu, MenuCategory, SimplifiedMenuItem } from "@/types/menu";
 import React from "react";
 import {
   Accordion,
@@ -13,29 +13,64 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { MenuItemCard } from "./item-card";
 import { Search } from "lucide-react";
 
-export const MenuList = ({
-  menu,
-}: {
-  menu: Record<string, SimplifiedMenuItem[]>;
-}) => {
+export const MenuList = ({ menu }: { menu: Menu }) => {
   const [searchQuery, setSearchQuery] = React.useState("");
-
+  console.log("MenuList rendered with menu:", menu);
   const filteredMenu = React.useMemo(() => {
     if (!searchQuery.trim()) return menu;
 
-    const filtered: Record<string, SimplifiedMenuItem[]> = {};
-    Object.entries(menu).forEach(([category, items]) => {
-      const matchingItems = items.filter(
+    const filtered: Record<string, MenuCategory> = {};
+    Object.entries(menu).forEach(([category, menuCategory]) => {
+      const matchingItems = menuCategory.items.filter(
         (item) =>
           item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           item.description?.toLowerCase().includes(searchQuery.toLowerCase())
       );
-      if (matchingItems.length > 0) {
-        filtered[category] = matchingItems;
+
+      const matchingSubcategories: Record<string, SimplifiedMenuItem[]> = {};
+      if (menuCategory.subcategories) {
+        Object.entries(menuCategory.subcategories).forEach(
+          ([subcat, items]) => {
+            const matchingSubItems = items.filter(
+              (item) =>
+                item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                item.description
+                  ?.toLowerCase()
+                  .includes(searchQuery.toLowerCase())
+            );
+            if (matchingSubItems.length > 0) {
+              matchingSubcategories[subcat] = matchingSubItems;
+            }
+          }
+        );
+      }
+
+      if (
+        matchingItems.length > 0 ||
+        Object.keys(matchingSubcategories).length > 0
+      ) {
+        filtered[category] = {
+          ...menuCategory,
+          items: matchingItems,
+          subcategories:
+            Object.keys(matchingSubcategories).length > 0
+              ? matchingSubcategories
+              : undefined,
+        };
       }
     });
     return filtered;
   }, [menu, searchQuery]);
+
+  const getTotalItemCount = (category: MenuCategory) => {
+    let count = category.items.length;
+    if (category.subcategories) {
+      Object.values(category.subcategories).forEach((items) => {
+        count += items.length;
+      });
+    }
+    return count;
+  };
 
   return (
     <div className="w-2/3">
@@ -64,7 +99,7 @@ export const MenuList = ({
                   : ""
               }
             >
-              {Object.keys(filteredMenu).map((category) => (
+              {Object.entries(filteredMenu).map(([category, menuCategory]) => (
                 <AccordionItem
                   key={category}
                   value={category}
@@ -74,15 +109,42 @@ export const MenuList = ({
                     <div className="flex items-center text-left">
                       <span className="font-medium">{category}</span>
                       <Badge className="ml-2">
-                        {filteredMenu[category].length}
+                        {getTotalItemCount(menuCategory)}
                       </Badge>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <div className="grid grid-cols-1 gap-3 py-2">
-                      {filteredMenu[category].map((item) => (
-                        <MenuItemCard key={item.id} item={item} />
-                      ))}
+                    <div className="space-y-4">
+                      {/* Main category items */}
+                      {menuCategory.items.length > 0 && (
+                        <div className="grid grid-cols-1 gap-3">
+                          {menuCategory.items.map((item) => (
+                            <MenuItemCard key={item.id} item={item} />
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Subcategories */}
+                      {menuCategory.subcategories &&
+                        Object.entries(menuCategory.subcategories).map(
+                          ([subcat, items]) => (
+                            <div key={subcat} className="pt-2">
+                              <div className="flex items-center mb-2">
+                                <h3 className="text-sm font-medium">
+                                  {subcat}
+                                </h3>
+                                <Badge variant="secondary" className="ml-2">
+                                  {items.length}
+                                </Badge>
+                              </div>
+                              <div className="grid grid-cols-1 gap-3">
+                                {items.map((item) => (
+                                  <MenuItemCard key={item.id} item={item} />
+                                ))}
+                              </div>
+                            </div>
+                          )
+                        )}
                     </div>
                   </AccordionContent>
                 </AccordionItem>

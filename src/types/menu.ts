@@ -25,9 +25,18 @@ export interface SimplifiedMenuItem {
   customizations?: AddonGroup[];
 }
 
+export interface MenuCategory {
+  name: string;
+  imageUrl?: string;
+  items: SimplifiedMenuItem[];
+  subcategories?: {
+    [subcategory: string]: SimplifiedMenuItem[];
+  };
+}
+
+export type Menu = Record<string, MenuCategory>;
+
 export interface MenuResponse {
   restaurantName: string;
-  menu: {
-    [category: string]: SimplifiedMenuItem[];
-  };
+  menu: Menu;
 }
