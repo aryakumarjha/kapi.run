@@ -17,12 +17,13 @@ interface SessionClientProps {
 export default function SessionClient({ session, menu }: SessionClientProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [needsNameForm, setNeedsNameForm] = useState(false);
-  const { id: userId } = useUserStore();
+  const { id: userId, rehydrayted } = useUserStore();
 
   useEffect(() => {
     const checkUser = async () => {
-      // await new Promise((resolve) => setTimeout(resolve, 500)); // Simulate a delay
+      if (!rehydrayted) return;
       if (!userId) {
+        console.log("No user ID found, showing name form");
         setNeedsNameForm(true);
         setIsLoading(false);
         return;
@@ -31,10 +32,7 @@ export default function SessionClient({ session, menu }: SessionClientProps) {
       try {
         const user = await getUserBySession(session.id, userId);
         console.log("User found:", user);
-        if (!user) {
-          console.log("User not found for session:", session.id);
-          setNeedsNameForm(true);
-        }
+        setNeedsNameForm(!!user);
       } catch (error) {
         console.error("Error checking user:", error);
         setNeedsNameForm(true);
@@ -43,10 +41,8 @@ export default function SessionClient({ session, menu }: SessionClientProps) {
       }
     };
 
-    console.log("Checking user for session:", session.id);
-
     checkUser();
-  }, [session.id, userId]);
+  }, [session.id, userId, rehydrayted]);
 
   if (isLoading) {
     return null; // Or show a loading spinner
