@@ -1,46 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use server";
 
+import { MenuResponse, SimplifiedMenuItem } from "@/types/menu";
 import { cache } from "react";
 
 const getImageUrl = (imageId?: string) => {
   if (!imageId) return undefined;
   return `https://media-assets.swiggy.com/swiggy/image/upload/fl_lossy,f_auto,q_auto,w_300,h_300,c_fit/${imageId}`;
 };
-
-interface Addon {
-  id: string;
-  name: string;
-  price: number;
-  inStock?: boolean;
-  isVeg?: boolean;
-  isEnabled?: boolean;
-}
-
-interface AddonGroup {
-  groupId: string;
-  groupName: string;
-  choices: Addon[];
-  maxAddons?: number;
-  minAddons?: number;
-}
-
-interface SimplifiedMenuItem {
-  id: string;
-  name: string;
-  description?: string;
-  isVeg?: boolean;
-  imageUrl?: string;
-  basePrice: number;
-  customizations?: AddonGroup[];
-}
-
-interface MenuResponse {
-  restaurantName: string;
-  menu: {
-    [category: string]: SimplifiedMenuItem[];
-  };
-}
 
 export const getMenu = cache(
   async (restaurantId: string, lat: number, lng: number) => {
