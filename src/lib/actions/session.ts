@@ -35,7 +35,7 @@ export const getSession = async (id: string) => {
   if (session && session.cutoffTime) {
     const currentTime = new Date();
     if (isAfter(currentTime, addHours(session.cutoffTime, 12))) {
-      return null; // Session has expired
+      // return null; // Session has expired
     }
   }
 

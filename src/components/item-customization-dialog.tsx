@@ -96,7 +96,7 @@ export function ItemCustomizationDialog({
       style: "currency",
       currency: "INR",
       minimumFractionDigits: 0,
-    }).format(price / 100);
+    }).format(price);
   };
 
   const handleVariantChange = (groupId: string, variant: Variant) => {
@@ -177,7 +177,10 @@ export function ItemCustomizationDialog({
     // Calculate addons total
     const addonsTotal = Object.values(selectedAddons)
       .flat()
-      .reduce((sum, addon) => sum + (isNaN(addon.price) ? 0 : addon.price), 0);
+      .reduce(
+        (sum, addon) => sum + (isNaN(addon.price) ? 0 : addon.price / 100),
+        0
+      );
 
     // If any variant is selected, use variants total as base price, otherwise use item's base price
     const basePrice =
@@ -241,7 +244,7 @@ export function ItemCustomizationDialog({
                           {variant.name}
                         </Label>
                         <span className="text-sm text-muted-foreground">
-                          {formatInr(variant.price)}
+                          +{formatInr(variant.price)}
                         </span>
                       </div>
                     ))}
@@ -261,7 +264,7 @@ export function ItemCustomizationDialog({
             return (
               <div key={group.groupId} className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-medium">{group.groupName}</h3>
+                  <h3 className="font-medium">{group.groupName || "Add On"}</h3>
                   {group.minAddons && group.maxAddons && (
                     <Badge variant="outline" className="text-xs">
                       {group.minAddons === group.maxAddons
@@ -292,7 +295,7 @@ export function ItemCustomizationDialog({
                             {choice.name}
                           </Label>
                           <span className="text-sm text-muted-foreground">
-                            {formatInr(choice.price)}
+                            +{formatInr(choice.price / 100)}
                           </span>
                         </div>
                       ))}
@@ -323,7 +326,7 @@ export function ItemCustomizationDialog({
                           {choice.name}
                         </Label>
                         <span className="text-sm text-muted-foreground">
-                          {formatInr(choice.price)}
+                          +{formatInr(choice.price / 100)}
                         </span>
                       </div>
                     ))

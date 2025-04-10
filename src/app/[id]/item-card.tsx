@@ -1,9 +1,9 @@
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { SimplifiedMenuItem } from "@/types/menu";
 import Image from "next/image";
 import { useState } from "react";
 import { ItemCustomizationDialog } from "@/components/item-customization-dialog";
+import { Badge } from "@/components/ui/badge";
 
 export const MenuItemCard = ({ item }: { item: SimplifiedMenuItem }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -40,12 +40,11 @@ export const MenuItemCard = ({ item }: { item: SimplifiedMenuItem }) => {
                   }`}
                 />
               )}
-              {Array.isArray(item.customizations) &&
-                item.customizations.length > 0 && (
-                  <Badge variant="outline" className="text-xs">
-                    Customizable
-                  </Badge>
-                )}
+              {(Array.isArray(item.addons) || Array.isArray(item.variants)) && (
+                <Badge variant="outline" className="text-xs">
+                  Customizable
+                </Badge>
+              )}
             </div>
             {item.description && (
               <p className="text-sm text-muted-foreground mt-1">

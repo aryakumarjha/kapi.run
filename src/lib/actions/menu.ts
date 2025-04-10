@@ -178,6 +178,26 @@ const processCarouselCard = (cardData: any): MenuCategory | null => {
   return category;
 };
 
+const fetchMenu = async (restaurantId: string, lat: number, lng: number) => {
+  if (process.env.NODE_ENV === "development") {
+    return (await import("../../../sample.alt.json")).default;
+  }
+
+  const url = `https://www.swiggy.com/dapi/menu/pl?page-type=REGULAR_MENU&complete-menu=true&lat=${lat}&lng=${lng}&restaurantId=${restaurantId}`;
+  const response = await fetch(url, {
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
+    },
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch menu: ${response.statusText}`);
+  }
+  return await response.json();
+};
+
 export const getMenu = cache(
   async (
     restaurantId: string,
@@ -185,19 +205,7 @@ export const getMenu = cache(
     lng: number
   ): Promise<MenuResponse> => {
     try {
-      const url = `https://www.swiggy.com/dapi/menu/pl?page-type=REGULAR_MENU&complete-menu=true&lat=${lat}&lng=${lng}&restaurantId=${restaurantId}`;
-      const response = await fetch(url, {
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
-        },
-      });
-      if (!response.ok) {
-        throw new Error(`Failed to fetch menu: ${response.statusText}`);
-      }
-      const data = await response.json();
+      const data = await fetchMenu(restaurantId, lat, lng);
       const cards = data?.data?.cards || [];
 
       // Extract restaurant name.
