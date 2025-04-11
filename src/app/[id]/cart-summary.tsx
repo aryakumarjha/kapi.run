@@ -15,7 +15,7 @@ import { placeOrder } from "@/lib/actions/order";
 import type { Session } from "@prisma/client";
 
 export const CartSummary = ({ session }: { session: Session }) => {
-  const { items, totalAmount: total, removeItemByIndex } = useCart();
+  const { items, totalAmount: total, removeItemByIndex, clearCart } = useCart();
 
   const formatInr = (price: number) => {
     return new Intl.NumberFormat("en-IN", {
@@ -46,7 +46,8 @@ export const CartSummary = ({ session }: { session: Session }) => {
         total: item.total,
       })),
     });
-  }, [items, session.id, total]);
+    clearCart();
+  }, [items, session.id, total, clearCart]);
 
   if (items.length === 0) {
     return (

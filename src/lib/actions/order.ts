@@ -42,9 +42,12 @@ export async function placeOrder(input: PlaceOrderInput) {
       },
     },
     include: {
+      session: true,
       items: true,
     },
   });
+
+  console.log("Order created:", order);
 
   return order;
 }

@@ -31,7 +31,6 @@ export const getSession = async (id: string) => {
     },
   });
 
-  // check for cutoff time
   if (session && session.cutoffTime) {
     const currentTime = new Date();
     if (isAfter(currentTime, session.cutoffTime)) {
@@ -39,6 +38,20 @@ export const getSession = async (id: string) => {
       return redirect(`/order/${session.id}`);
     }
   }
+
+  return session;
+};
+
+export const getSessionWithItems = async (id: string) => {
+  const session = await prisma.session.findFirst({
+    where: {
+      id,
+    },
+    include: {
+      participants: true,
+      Order: true,
+    },
+  });
 
   return session;
 };
