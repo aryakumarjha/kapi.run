@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { addHours, isAfter } from "date-fns";
+import { isAfter } from "date-fns/isAfter";
 import { redirect } from "next/navigation";
 
 export const createSession = async (form: FormData) => {
@@ -34,8 +34,9 @@ export const getSession = async (id: string) => {
   // check for cutoff time
   if (session && session.cutoffTime) {
     const currentTime = new Date();
-    if (isAfter(currentTime, addHours(session.cutoffTime, 12))) {
-      // return null; // Session has expired
+    if (isAfter(currentTime, session.cutoffTime)) {
+      // redirect to order page if the cutoff time has passed
+      return redirect(`/order/${session.id}`);
     }
   }
 
