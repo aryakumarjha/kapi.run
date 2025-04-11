@@ -65,3 +65,13 @@ export const isSessionCreator = async (sessionId: string, userId: string) => {
 
   return !!session;
 };
+
+export const getAllSessionIds = async () => {
+  const sessions = await prisma.session.findMany({
+    select: {
+      id: true,
+    },
+  });
+
+  return sessions.map((session) => session.id);
+};

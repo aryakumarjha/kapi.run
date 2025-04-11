@@ -1,7 +1,14 @@
-import { getSession } from "@/lib/actions/session";
+import { getAllSessionIds, getSession } from "@/lib/actions/session";
 import { notFound } from "next/navigation";
 import { getMenu } from "@/lib/actions/menu";
 import SessionClient from "./session-client";
+
+export async function generateStaticParams() {
+  const sessionsIds = await getAllSessionIds();
+  return sessionsIds.map((id) => ({
+    id,
+  }));
+}
 
 export default async function Page({
   params,
