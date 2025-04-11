@@ -35,7 +35,7 @@ export const getSession = async (id: string) => {
     const currentTime = new Date();
     if (isAfter(currentTime, session.cutoffTime)) {
       // redirect to order page if the cutoff time has passed
-      return redirect(`/order/${session.id}`);
+      return redirect(`/orders/${session.id}`);
     }
   }
 
@@ -49,7 +49,11 @@ export const getSessionWithItems = async (id: string) => {
     },
     include: {
       participants: true,
-      Order: true,
+      orders: {
+        include: {
+          items: true,
+        },
+      },
     },
   });
 

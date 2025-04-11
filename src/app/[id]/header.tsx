@@ -24,7 +24,7 @@ export default function MenuHeader({ session }: MenuHeaderProps) {
             <div className="flex items-center gap-2">
               <CopySession />
               <Button variant="outline" size="sm" asChild>
-                <Link href={`/order/${session.id}`}>View Order</Link>
+                <Link href={`/orders/${session.id}`}>View Order</Link>
               </Button>
             </div>
           </div>

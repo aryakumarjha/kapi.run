@@ -3,51 +3,56 @@
 import { getUserFromCookies } from "../cookies";
 import { prisma } from "../prisma";
 
-export type PlaceOrderInput = {
+export type AddItemInput = {
   sessionId: string;
-  items: Array<{
+  name: string;
+  quantity: number;
+  note?: string;
+  basePrice: number;
+  addons?: Array<{
     name: string;
-    quantity: number;
-    note?: string;
-    basePrice: number;
-    addons?: Array<{
-      name: string;
-      price: number;
-      groupId: string;
-    }>;
-    total: number;
+    price: number;
+    groupId: string;
   }>;
   total: number;
 };
 
-export async function placeOrder(input: PlaceOrderInput) {
+export async function addItemToSession(input: AddItemInput) {
   const user = await getUserFromCookies();
   if (!user) {
     throw new Error("User not found");
   }
-  const order = await prisma.order.create({
+
+  const item = await prisma.item.create({
     data: {
       sessionId: input.sessionId,
       userId: user.id,
+      name: input.name,
+      quantity: input.quantity,
+      note: input.note,
+      basePrice: input.basePrice,
+      addons: input.addons,
       total: input.total,
-      items: {
-        create: input.items.map((item) => ({
-          name: item.name,
-          quantity: item.quantity,
-          note: item.note,
-          basePrice: item.basePrice,
-          addons: item.addons,
-          total: item.total,
-        })),
-      },
     },
     include: {
       session: true,
-      items: true,
+      user: true,
     },
   });
 
-  console.log("Order created:", order);
+  return item;
+}
 
-  return order;
+export async function getSessionItems(sessionId: string) {
+  return prisma.item.findMany({
+    where: {
+      sessionId,
+    },
+    include: {
+      user: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
 }

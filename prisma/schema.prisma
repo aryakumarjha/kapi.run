@@ -19,10 +19,8 @@ model Session {
     createdAt      DateTime      @default(now())
     participants   SessionUser[]
     items          Item[]
-    reactions      Reaction[]
     lat            Float?
     lng            Float?
-    Order          Order[]
 }
 
 model User {
@@ -31,8 +29,6 @@ model User {
     createdAt DateTime      @default(now())
     sessions  SessionUser[]
     items     Item[]
-    reactions Reaction[]
-    Order     Order[]
 }
 
 model SessionUser {
@@ -47,85 +43,16 @@ model SessionUser {
 }
 
 model Item {
-    id        String             @id @default(cuid())
-    name      String
-    quantity  Int                @default(1)
-    note      String?
-    userId    String
-    sessionId String
-    basePrice Int
-    variants  VariantSelection[]
-    addons    AddonSelection[]
-    user      User               @relation(fields: [userId], references: [id])
-    session   Session            @relation(fields: [sessionId], references: [id])
-    reactions Reaction[]
-    createdAt DateTime           @default(now())
-}
-
-model VariantSelection {
     id        String   @id @default(cuid())
-    itemId    String
-    item      Item     @relation(fields: [itemId], references: [id])
-    variantId String
-    name      String
-    price     Int
-    groupId   String
-    groupName String
-    createdAt DateTime @default(now())
-}
-
-model AddonSelection {
-    id        String   @id @default(cuid())
-    itemId    String
-    item      Item     @relation(fields: [itemId], references: [id])
-    addonId   String
-    name      String
-    price     Int
-    groupId   String
-    groupName String
-    createdAt DateTime @default(now())
-}
-
-model Reaction {
-    id        String   @id @default(cuid())
-    emoji     String
-    userId    String
-    itemId    String
-    sessionId String
-    user      User     @relation(fields: [userId], references: [id])
-    item      Item     @relation(fields: [itemId], references: [id])
-    session   Session  @relation(fields: [sessionId], references: [id])
-    createdAt DateTime @default(now())
-}
-
-model Order {
-    id        String      @id @default(cuid())
     sessionId String
     userId    String
-    status    OrderStatus @default(PENDING)
-    total     Int
-    items     OrderItem[]
-    user      User        @relation(fields: [userId], references: [id])
-    session   Session     @relation(fields: [sessionId], references: [id])
-    createdAt DateTime    @default(now())
-}
-
-model OrderItem {
-    id        String   @id @default(cuid())
-    orderId   String
-    order     Order    @relation(fields: [orderId], references: [id])
     name      String
     quantity  Int
     note      String?
     basePrice Int
-    variants  Json?    @db.JsonB
-    addons    Json?    @db.JsonB
+    addons    Json?
     total     Int
+    session   Session  @relation(fields: [sessionId], references: [id])
+    user      User     @relation(fields: [userId], references: [id])
     createdAt DateTime @default(now())
-}
-
-enum OrderStatus {
-    PENDING
-    CONFIRMED
-    CANCELLED
 }
