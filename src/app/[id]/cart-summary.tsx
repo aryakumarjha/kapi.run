@@ -15,18 +15,11 @@ import { addItemToSession } from "@/lib/actions/order";
 import { toast } from "sonner";
 import type { Session } from "@prisma/client";
 import { useRouter } from "next/navigation";
+import { formatInr } from "@/lib/format-inr";
 
 export const CartSummary = ({ session }: { session: Session }) => {
   const { items, totalAmount: total, removeItemByIndex, clearCart } = useCart();
   const router = useRouter();
-
-  const formatInr = (price: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      minimumFractionDigits: 0,
-    }).format(price);
-  };
 
   const handleSubmit = useCallback(async () => {
     try {

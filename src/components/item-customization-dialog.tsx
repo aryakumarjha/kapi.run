@@ -14,6 +14,7 @@ import { Label } from "./ui/label";
 import { useCart } from "@/lib/store/cart";
 import { Badge } from "./ui/badge";
 import { Plus, Minus } from "lucide-react";
+import { formatInr } from "@/lib/format-inr";
 
 interface ItemCustomizationDialogProps {
   item: SimplifiedMenuItem;
@@ -87,17 +88,6 @@ function ItemCustomizationDialog({
 
   const [quantity, setQuantity] = useState(1);
   const { addItem } = useCart();
-
-  const formatInr = (price: number) => {
-    if (isNaN(price)) {
-      price = 0;
-    }
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      minimumFractionDigits: 0,
-    }).format(price);
-  };
 
   const handleVariantChange = (groupId: string, variant: Variant) => {
     setSelectedVariants((prev) => ({
@@ -181,10 +171,7 @@ function ItemCustomizationDialog({
     // Calculate addons total
     const addonsTotal = Object.values(selectedAddons)
       .flat()
-      .reduce(
-        (sum, addon) => sum + (isNaN(addon.price) ? 0 : addon.price / 100),
-        0
-      );
+      .reduce((sum, addon) => sum + (isNaN(addon.price) ? 0 : addon.price), 0);
 
     // If any variant is selected, use variants total as base price, otherwise use item's base price
     const basePrice =
@@ -299,7 +286,7 @@ function ItemCustomizationDialog({
                             {choice.name}
                           </Label>
                           <span className="text-sm text-muted-foreground">
-                            +{formatInr(choice.price / 100)}
+                            +{formatInr(choice.price)}
                           </span>
                         </div>
                       ))}
@@ -330,7 +317,7 @@ function ItemCustomizationDialog({
                           {choice.name}
                         </Label>
                         <span className="text-sm text-muted-foreground">
-                          +{formatInr(choice.price / 100)}
+                          +{formatInr(choice.price)}
                         </span>
                       </div>
                     ))

@@ -5,23 +5,13 @@ import { useState } from "react";
 import ItemCustomizationDialog from "@/components/item-customization-dialog";
 import { Badge } from "@/components/ui/badge";
 import { nanoid } from "nanoid";
+import { formatInr } from "@/lib/format-inr";
 
 export const MenuItemCard = ({ item }: { item: SimplifiedMenuItem }) => {
   const [isDialogOpen, setIsDialogOpen] = useState({
     open: false,
     id: "",
   });
-
-  const formatInr = (price: number) => {
-    if (isNaN(price) || price <= 0) {
-      return "N/A";
-    }
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      minimumFractionDigits: 0,
-    }).format(price / 100);
-  };
 
   const handleItemClick = () => {
     setIsDialogOpen({ open: true, id: nanoid() });

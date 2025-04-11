@@ -47,10 +47,7 @@ const calculateItemTotal = (item: CartItem) => {
   const addonsTotal = item.selectedAddons.reduce(
     (acc, group) =>
       acc +
-      group.addons.reduce(
-        (sum, addon) => sum + defaultZero(addon.price / 100),
-        0
-      ),
+      group.addons.reduce((sum, addon) => sum + defaultZero(addon.price), 0),
     0
   );
 
