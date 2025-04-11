@@ -10,14 +10,14 @@ datasource db {
 }
 
 model Session {
-    id             String     @id @default(cuid())
+    id             String        @id @default(cuid())
     creatorName    String
     creatorId      String
     restaurantId   String
     restaurantName String
     cutoffTime     DateTime?
-    createdAt      DateTime   @default(now())
-    users          User[]
+    createdAt      DateTime      @default(now())
+    participants   SessionUser[]
     items          Item[]
     reactions      Reaction[]
     lat            Float?
@@ -26,14 +26,24 @@ model Session {
 }
 
 model User {
-    id        String     @id @default(cuid())
+    id        String        @id @default(cuid())
     name      String
-    sessionId String
-    session   Session    @relation(fields: [sessionId], references: [id])
+    createdAt DateTime      @default(now())
+    sessions  SessionUser[]
     items     Item[]
     reactions Reaction[]
-    createdAt DateTime   @default(now())
     Order     Order[]
+}
+
+model SessionUser {
+    id        String   @id @default(cuid())
+    user      User     @relation(fields: [userId], references: [id])
+    userId    String
+    session   Session  @relation(fields: [sessionId], references: [id])
+    sessionId String
+    createdAt DateTime @default(now())
+
+    @@unique([userId, sessionId])
 }
 
 model Item {

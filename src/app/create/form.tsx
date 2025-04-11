@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { createSession } from "@/lib/actions/session";
-import { createUser } from "@/lib/actions/user";
+import { createUser, joinSession } from "@/lib/actions/user";
 import { getCachedApproxLocation } from "@/lib/position";
 import { cn } from "@/lib/utils";
 import { Restaurant } from "@/types/restaurants";
@@ -73,6 +73,7 @@ export default function SessionCreateForm({
 
   const router = useRouter();
   const setUser = useUserStore((state) => state.setUser);
+  const { id: existingUserId } = useUserStore();
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -93,7 +94,7 @@ export default function SessionCreateForm({
 
   const onSubmit = async (data: z.infer<typeof FormSchema>) => {
     const formData = new FormData();
-    const userId = nanoid();
+    const userId = existingUserId || nanoid();
 
     formData.append("creator-name", data["creator-name"]);
     formData.append("restaurant-id", data["restaurant-id"]);
@@ -110,14 +111,17 @@ export default function SessionCreateForm({
 
     const session = await createSession(formData);
 
-    // Create user and store in Zustand
-    await createUser({
-      id: userId,
-      name: data["creator-name"],
-      sessionId: session.id,
-    });
+    // Create user if they don't exist
+    if (!existingUserId) {
+      await createUser({
+        id: userId,
+        name: data["creator-name"],
+      });
+      setUser(userId, data["creator-name"]);
+    }
 
-    setUser(userId, data["creator-name"]);
+    // Join the session
+    await joinSession(userId, session.id);
     router.replace(`/${session.id}`);
   };
 
