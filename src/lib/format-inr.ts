@@ -1,6 +1,6 @@
 export const formatInr = (price: number) => {
   if (isNaN(price) || price <= 0) {
-    return "N/A";
+    return "0";
   }
   return new Intl.NumberFormat("en-IN", {
     style: "currency",

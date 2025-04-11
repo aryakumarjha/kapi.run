@@ -34,7 +34,9 @@ const getBasePrice = (info: any): number => {
     info.variants.variantGroups[0]?.variations?.length > 0 &&
     info.variants.variantGroups[0].variations[0]?.price
   ) {
-    basePrice = Math.floor(info.variants.variantGroups[0].variations[0].price);
+    basePrice = Math.floor(
+      info.variants.variantGroups[0].variations[0].price * 100
+    );
   }
   return basePrice;
 };
@@ -67,7 +69,7 @@ const processDish = (info: any): SimplifiedMenuItem | null => {
           (variation: any): Variant => ({
             id: variation.id?.toString() || "",
             name: variation.name || "",
-            price: variation.price ? Math.floor(variation.price) : 0,
+            price: variation.price ? Math.floor(variation.price * 100) : 0,
             inStock:
               typeof variation.inStock !== "undefined"
                 ? Boolean(variation.inStock)
