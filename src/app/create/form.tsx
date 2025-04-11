@@ -34,7 +34,7 @@ import { Restaurant } from "@/types/restaurants";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
 import { addHours } from "date-fns/addHours";
-import { ArrowRight, CalendarIcon, Loader2 } from "lucide-react";
+import { ArrowRight, CalendarIcon, ClockIcon, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -320,7 +320,7 @@ export default function SessionCreateForm({
                         ) : (
                           <span>Pick a time</span>
                         )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        <ClockIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
