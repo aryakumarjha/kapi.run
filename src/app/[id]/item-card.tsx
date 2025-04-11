@@ -2,11 +2,15 @@ import { Card } from "@/components/ui/card";
 import { SimplifiedMenuItem } from "@/types/menu";
 import Image from "next/image";
 import { useState } from "react";
-import { ItemCustomizationDialog } from "@/components/item-customization-dialog";
+import ItemCustomizationDialog from "@/components/item-customization-dialog";
 import { Badge } from "@/components/ui/badge";
+import { nanoid } from "nanoid";
 
 export const MenuItemCard = ({ item }: { item: SimplifiedMenuItem }) => {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState({
+    open: false,
+    id: "",
+  });
 
   const formatInr = (price: number) => {
     if (isNaN(price) || price <= 0) {
@@ -20,7 +24,7 @@ export const MenuItemCard = ({ item }: { item: SimplifiedMenuItem }) => {
   };
 
   const handleItemClick = () => {
-    setIsDialogOpen(true);
+    setIsDialogOpen({ open: true, id: nanoid() });
   };
 
   return (
@@ -68,10 +72,10 @@ export const MenuItemCard = ({ item }: { item: SimplifiedMenuItem }) => {
       </Card>
 
       <ItemCustomizationDialog
-        key={item.id}
+        key={isDialogOpen.id}
         item={item}
-        open={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
+        open={isDialogOpen.open}
+        onClose={() => setIsDialogOpen({ open: false, id: "" })}
       />
     </>
   );

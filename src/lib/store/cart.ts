@@ -8,10 +8,12 @@ interface CartItem {
   quantity: number;
   selectedVariants: {
     groupId: string;
+    groupName: string;
     variant: Variant;
   }[];
   selectedAddons: {
     groupId: string;
+    groupName: string;
     addons: Addon[];
   }[];
   note?: string;
@@ -24,7 +26,7 @@ interface CartItemWithIdAndTotal extends CartItem {
 
 interface CartStore {
   items: CartItemWithIdAndTotal[];
-  totalAmount: number;
+  totalAmount: number; // in rupees not paise
   addItem: (item: CartItem) => void;
   removeItem: (id: string) => void;
   removeItemByIndex: (index: number) => void;
@@ -32,6 +34,28 @@ interface CartStore {
 }
 
 const defaultZero = (num: number) => (isNaN(num) ? 0 : num);
+
+const calculateItemTotal = (item: CartItem) => {
+  const basePrice =
+    item.selectedVariants.length > 0
+      ? item.selectedVariants.reduce(
+          (sum, { variant }) => sum + defaultZero(variant.price),
+          0
+        )
+      : defaultZero(item.menuItem.basePrice);
+
+  const addonsTotal = item.selectedAddons.reduce(
+    (acc, group) =>
+      acc +
+      group.addons.reduce(
+        (sum, addon) => sum + defaultZero(addon.price / 100),
+        0
+      ),
+    0
+  );
+
+  return basePrice + addonsTotal;
+};
 
 export const useCart = create<CartStore>()(
   persist(
@@ -43,23 +67,7 @@ export const useCart = create<CartStore>()(
           ...item,
           id: nanoid(),
           // calculate total with addons
-          total:
-            (item.selectedVariants.length > 0
-              ? item.selectedVariants.reduce(
-                  (sum, { variant }) => sum + defaultZero(variant.price),
-                  0
-                )
-              : defaultZero(item.menuItem.basePrice)) +
-            item.selectedAddons.reduce(
-              (acc, group) =>
-                acc +
-                group.addons.reduce(
-                  (sum, addon) => sum + defaultZero(addon.price),
-                  0
-                ),
-              0
-            ) *
-              item.quantity,
+          total: calculateItemTotal(item) * item.quantity,
         };
 
         set((state) => ({

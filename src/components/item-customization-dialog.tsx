@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -21,7 +21,7 @@ interface ItemCustomizationDialogProps {
   onClose: () => void;
 }
 
-export function ItemCustomizationDialog({
+function ItemCustomizationDialog({
   item,
   open,
   onClose,
@@ -142,6 +142,8 @@ export function ItemCustomizationDialog({
     const formattedVariants = Object.entries(selectedVariants).map(
       ([groupId, variant]) => ({
         groupId,
+        groupName: item.variants?.find((group) => group.groupId === groupId)!
+          .groupName as string,
         variant,
       })
     );
@@ -150,6 +152,8 @@ export function ItemCustomizationDialog({
     const formattedAddons = Object.entries(selectedAddons).map(
       ([groupId, addons]) => ({
         groupId,
+        groupName: item.addons?.find((group) => group.groupId === groupId)!
+          .groupName as string,
         addons,
       })
     );
@@ -367,3 +371,5 @@ export function ItemCustomizationDialog({
     </Dialog>
   );
 }
+
+export default memo(ItemCustomizationDialog);

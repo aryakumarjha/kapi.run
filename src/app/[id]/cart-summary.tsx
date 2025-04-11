@@ -22,7 +22,7 @@ export const CartSummary = ({ session }: { session: Session }) => {
       style: "currency",
       currency: "INR",
       minimumFractionDigits: 0,
-    }).format(price / 100);
+    }).format(price);
   };
 
   const handleSubmit = useCallback(async () => {
@@ -88,11 +88,21 @@ export const CartSummary = ({ session }: { session: Session }) => {
                       />
                     )}
                   </div>
+                  {item.selectedVariants.length > 0 && (
+                    <div className="text-sm text-muted-foreground">
+                      {item.selectedVariants.map((variant) => (
+                        <div key={variant.variant.id}>
+                          {variant.groupName}: {variant.variant.name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   {item.selectedAddons.map((group) => (
                     <div
                       key={group.groupId}
                       className="text-sm text-muted-foreground"
                     >
+                      {group.groupName || "Add On"}:{" "}
                       {group.addons.map((addon) => addon.name).join(", ")}
                     </div>
                   ))}
