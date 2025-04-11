@@ -69,6 +69,7 @@ const processDish = (info: any): SimplifiedMenuItem | null => {
           (variation: any): Variant => ({
             id: variation.id?.toString() || "",
             name: variation.name || "",
+            // since the price is not always in paise, we multiply by 100
             price: variation.price ? Math.floor(variation.price * 100) : 0,
             inStock:
               typeof variation.inStock !== "undefined"
