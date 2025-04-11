@@ -49,11 +49,7 @@ export const getSessionWithItems = async (id: string) => {
     },
     include: {
       participants: true,
-      orders: {
-        include: {
-          items: true,
-        },
-      },
+      items: true,
     },
   });
 
