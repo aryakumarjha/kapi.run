@@ -13,8 +13,7 @@ import {
 import { Coffee } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { nanoid } from "nanoid";
-import { useUserStore } from "@/lib/store/user";
-import { createUser, joinSession } from "@/lib/actions/user";
+import { createUser, joinSession, getCurrentUser } from "@/lib/actions/user";
 
 interface UserNameFormProps {
   onComplete: () => void;
@@ -27,23 +26,21 @@ export default function UserNameForm({
 }: UserNameFormProps) {
   const [name, setName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const setUser = useUserStore((state) => state.setUser);
-  const { id: existingUserId } = useUserStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
     setIsSubmitting(true);
-    const userId = existingUserId || nanoid();
+    const existingUser = await getCurrentUser();
+    const userId = existingUser?.id || nanoid();
 
     try {
-      if (!existingUserId) {
+      if (!existingUser) {
         await createUser({
           id: userId,
           name: name.trim(),
         });
-        setUser(userId, name.trim());
       }
 
       await joinSession(userId, sessionId);
@@ -64,31 +61,23 @@ export default function UserNameForm({
             <span>Join Session</span>
           </CardTitle>
           <CardDescription>
-            {existingUserId
-              ? "Click Join to participate in this session."
-              : "Please enter your name to join the session."}
+            Please enter your name to join the session.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {!existingUserId && (
-              <div className="space-y-2">
-                <Label htmlFor="name">Your Name</Label>
-                <Input
-                  id="name"
-                  placeholder="John Doe"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                />
-              </div>
-            )}
+            <div className="space-y-2">
+              <Label htmlFor="name">Your Name</Label>
+              <Input
+                id="name"
+                placeholder="John Doe"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </div>
             <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting
-                ? "Joining..."
-                : existingUserId
-                ? "Join Session"
-                : "Join Session"}
+              {isSubmitting ? "Joining..." : "Join Session"}
             </Button>
           </form>
         </CardContent>

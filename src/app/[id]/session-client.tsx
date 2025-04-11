@@ -2,8 +2,7 @@
 
 import { Session } from "@prisma/client";
 import { useEffect, useState } from "react";
-import { useUserStore } from "@/lib/store/user";
-import { isUserInSession } from "@/lib/actions/user";
+import { isUserInSession, getCurrentUser } from "@/lib/actions/user";
 import UserNameForm from "@/components/user-name-form";
 import Menu from "./menu";
 import MenuHeader from "./header";
@@ -17,18 +16,19 @@ interface SessionClientProps {
 export default function SessionClient({ session, menu }: SessionClientProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [needsNameForm, setNeedsNameForm] = useState(false);
-  const { id: userId } = useUserStore();
 
   useEffect(() => {
     const checkUserParticipation = async () => {
-      if (!userId) {
+      const user = await getCurrentUser();
+
+      if (!user) {
         setNeedsNameForm(true);
         setIsLoading(false);
         return;
       }
 
       try {
-        const isParticipating = await isUserInSession(userId, session.id);
+        const isParticipating = await isUserInSession(user.id, session.id);
         setNeedsNameForm(!isParticipating);
       } catch (error) {
         console.error("Error checking user participation:", error);
@@ -39,7 +39,7 @@ export default function SessionClient({ session, menu }: SessionClientProps) {
     };
 
     checkUserParticipation();
-  }, [session.id, userId]);
+  }, [session.id]);
 
   if (isLoading) {
     return null; // Or show a loading spinner

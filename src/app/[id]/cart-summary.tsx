@@ -12,7 +12,6 @@ import { ShoppingCart, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { placeOrder } from "@/lib/actions/order";
-import { useUserStore } from "@/lib/store/user";
 import type { Session } from "@prisma/client";
 
 export const CartSummary = ({ session }: { session: Session }) => {
@@ -29,7 +28,6 @@ export const CartSummary = ({ session }: { session: Session }) => {
   const handleSubmit = useCallback(async () => {
     await placeOrder({
       sessionId: session.id,
-      userId: useUserStore.getState().id!,
       total,
       items: items.map((item) => ({
         name: item.menuItem.name,

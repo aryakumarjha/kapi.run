@@ -1,10 +1,10 @@
 "use server";
 
+import { getUserFromCookies } from "../cookies";
 import { prisma } from "../prisma";
 
 export type PlaceOrderInput = {
   sessionId: string;
-  userId: string;
   items: Array<{
     name: string;
     quantity: number;
@@ -21,10 +21,14 @@ export type PlaceOrderInput = {
 };
 
 export async function placeOrder(input: PlaceOrderInput) {
+  const user = await getUserFromCookies();
+  if (!user) {
+    throw new Error("User not found");
+  }
   const order = await prisma.order.create({
     data: {
       sessionId: input.sessionId,
-      userId: input.userId,
+      userId: user.id,
       total: input.total,
       items: {
         create: input.items.map((item) => ({

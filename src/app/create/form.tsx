@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { createSession } from "@/lib/actions/session";
-import { createUser, joinSession } from "@/lib/actions/user";
+import { createUser, joinSession, getCurrentUser } from "@/lib/actions/user";
 import { getCachedApproxLocation } from "@/lib/position";
 import { cn } from "@/lib/utils";
 import { Restaurant } from "@/types/restaurants";
@@ -40,7 +40,6 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
-import { useUserStore } from "@/lib/store/user";
 import { nanoid } from "nanoid";
 
 interface SessionCreateFormProps {
@@ -66,14 +65,13 @@ export default function SessionCreateForm({
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(
     null
   );
-
   const [locationStatus, setLocationStatus] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
+  const [hasExistingUser, setHasExistingUser] = useState(false);
+  const [existingUserName, setExistingUserName] = useState("");
 
   const router = useRouter();
-  const setUser = useUserStore((state) => state.setUser);
-  const { id: existingUserId } = useUserStore();
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -92,9 +90,22 @@ export default function SessionCreateForm({
     getLocation();
   }, []);
 
+  useEffect(() => {
+    const checkExistingUser = async () => {
+      const user = await getCurrentUser();
+      if (user) {
+        setHasExistingUser(true);
+        setExistingUserName(user.name);
+        form.setValue("creator-name", user.name);
+      }
+    };
+    checkExistingUser();
+  }, [form]);
+
   const onSubmit = async (data: z.infer<typeof FormSchema>) => {
     const formData = new FormData();
-    const userId = existingUserId || nanoid();
+    const user = await getCurrentUser();
+    const userId = user?.id || nanoid();
 
     formData.append("creator-name", data["creator-name"]);
     formData.append("restaurant-id", data["restaurant-id"]);
@@ -112,12 +123,11 @@ export default function SessionCreateForm({
     const session = await createSession(formData);
 
     // Create user if they don't exist
-    if (!existingUserId) {
+    if (!user) {
       await createUser({
         id: userId,
         name: data["creator-name"],
       });
-      setUser(userId, data["creator-name"]);
     }
 
     // Join the session
@@ -127,6 +137,10 @@ export default function SessionCreateForm({
 
   function handleDateSelect(date: Date | undefined) {
     if (date) {
+      // When changing just the date, preserve the existing time
+      const currentDate = form.getValues("cutoffTime");
+      date.setHours(currentDate.getHours());
+      date.setMinutes(currentDate.getMinutes());
       form.setValue("cutoffTime", date);
     }
   }
@@ -178,116 +192,153 @@ export default function SessionCreateForm({
             );
             break;
           case error.POSITION_UNAVAILABLE:
-            toast.error(
-              "Location information is unavailable. Please try again."
-            );
+            toast.error("Location information is unavailable.");
             break;
           case error.TIMEOUT:
-            toast.error(
-              "The request to get location timed out. Please try again."
-            );
+            toast.error("The request to get location timed out.");
             break;
           default:
-            toast.error("An unknown error occurred. Please try again later.");
+            toast.error("An unknown error occurred.");
             break;
         }
+        setLocationStatus("error");
         form.setValue("use-precise-location", false);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 5000,
-        maximumAge: 0,
       }
     );
   };
 
   return (
     <Form {...form}>
-      <form className="space-y-4 w-full" onSubmit={form.handleSubmit(onSubmit)}>
-        <FormField
-          control={form.control}
-          name="creator-name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Enter your name</FormLabel>
-              <FormControl>
-                <Input placeholder="John Doe" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        {!hasExistingUser && (
+          <FormField
+            control={form.control}
+            name="creator-name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Your Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="John Doe" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        {hasExistingUser && (
+          <FormItem>
+            <FormLabel>Your Name</FormLabel>
+            <FormControl>
+              <Input value={existingUserName} disabled />
+            </FormControl>
+            <FormDescription>
+              {`You'll join this session as ${existingUserName}`}
+            </FormDescription>
+          </FormItem>
+        )}
+
         <FormField
           control={form.control}
           name="restaurant-id"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Select a restaurant</FormLabel>
-              <FormControl>
-                <Select onValueChange={field.onChange} {...field}>
+              <FormLabel>Restaurant</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Please select an item" />
+                    <SelectValue placeholder="Select a restaurant" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {restaurants.map((restaurant) => (
-                      <SelectItem
-                        key={restaurant.id}
-                        value={restaurant.id.toString()}
-                      >
-                        {restaurant.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormControl>
+                </FormControl>
+                <SelectContent>
+                  {restaurants.map((restaurant) => (
+                    <SelectItem
+                      key={restaurant.id}
+                      value={restaurant.id.toString()}
+                    >
+                      {restaurant.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
         />
+
         <FormField
           control={form.control}
           name="cutoffTime"
           render={({ field }) => (
             <FormItem className="flex flex-col">
-              <FormLabel>Select Cutoff Time</FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full pl-3 text-left font-normal",
-                        !field.value && "text-muted-foreground"
-                      )}
-                    >
-                      {field.value ? (
-                        format(field.value, "MM/dd/yyyy hh:mm aa")
-                      ) : (
-                        <span>MM/DD/YYYY hh:mm aa</span>
-                      )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <div className="sm:flex">
+              <FormLabel>Cut-off Time</FormLabel>
+              <div className="flex gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "pl-3 text-left font-normal flex-1",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        {field.value ? (
+                          format(field.value, "MMM d, yyyy")
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
                       selected={field.value}
                       onSelect={handleDateSelect}
+                      disabled={(date) =>
+                        date < new Date() || date > addHours(new Date(), 24)
+                      }
+                      initialFocus
                     />
-                    <div className="flex flex-col sm:flex-row sm:h-[300px] divide-y sm:divide-y-0 sm:divide-x">
-                      <ScrollArea className="w-64 sm:w-auto">
+                  </PopoverContent>
+                </Popover>
+
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "pl-3 text-left font-normal flex-1",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        {field.value ? (
+                          format(field.value, "hh:mm a")
+                        ) : (
+                          <span>Pick a time</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-auto p-0 flex flex-col sm:flex-row"
+                    align="start"
+                  >
+                    <div className="border-r">
+                      <ScrollArea className="h-48 sm:h-72">
                         <div className="flex sm:flex-col p-2">
-                          {Array.from({ length: 12 }, (_, i) => i + 1)
-                            .reverse()
-                            .map((hour) => (
+                          {Array.from({ length: 12 }, (_, i) => i + 1).map(
+                            (hour) => (
                               <Button
                                 key={hour}
                                 size="icon"
                                 variant={
                                   field.value &&
-                                  field.value.getHours() % 12 === hour % 12
+                                  (field.value.getHours() % 12 || 12) === hour
                                     ? "default"
                                     : "ghost"
                                 }
@@ -296,18 +347,21 @@ export default function SessionCreateForm({
                                   handleTimeChange("hour", hour.toString())
                                 }
                               >
-                                {hour}
+                                {hour.toString().padStart(2, "0")}
                               </Button>
-                            ))}
+                            )
+                          )}
                         </div>
                         <ScrollBar
                           orientation="horizontal"
                           className="sm:hidden"
                         />
                       </ScrollArea>
-                      <ScrollArea className="w-64 sm:w-auto">
+                    </div>
+                    <div className="border-r">
+                      <ScrollArea className="h-48 sm:h-72">
                         <div className="flex sm:flex-col p-2">
-                          {Array.from({ length: 12 }, (_, i) => i * 5).map(
+                          {Array.from({ length: 60 }, (_, i) => i).map(
                             (minute) => (
                               <Button
                                 key={minute}
@@ -333,73 +387,78 @@ export default function SessionCreateForm({
                           className="sm:hidden"
                         />
                       </ScrollArea>
-                      <ScrollArea className="">
-                        <div className="flex sm:flex-col p-2">
-                          {["AM", "PM"].map((ampm) => (
-                            <Button
-                              key={ampm}
-                              size="icon"
-                              variant={
-                                field.value &&
-                                ((ampm === "AM" &&
-                                  field.value.getHours() < 12) ||
-                                  (ampm === "PM" &&
-                                    field.value.getHours() >= 12))
-                                  ? "default"
-                                  : "ghost"
-                              }
-                              className="sm:w-full shrink-0 aspect-square"
-                              onClick={() => handleTimeChange("ampm", ampm)}
-                            >
-                              {ampm}
-                            </Button>
-                          ))}
-                        </div>
-                      </ScrollArea>
                     </div>
-                  </div>
-                </PopoverContent>
-                <FormMessage />
-              </Popover>
+                    <ScrollArea className="">
+                      <div className="flex sm:flex-col p-2">
+                        {["AM", "PM"].map((ampm) => (
+                          <Button
+                            key={ampm}
+                            size="icon"
+                            variant={
+                              field.value &&
+                              ((ampm === "AM" && field.value.getHours() < 12) ||
+                                (ampm === "PM" && field.value.getHours() >= 12))
+                                ? "default"
+                                : "ghost"
+                            }
+                            className="sm:w-full shrink-0 aspect-square"
+                            onClick={() => handleTimeChange("ampm", ampm)}
+                          >
+                            {ampm}
+                          </Button>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <FormDescription>
+                The time by which all orders must be placed.
+              </FormDescription>
+              <FormMessage />
             </FormItem>
           )}
         />
+
         <FormField
           control={form.control}
           name="use-precise-location"
           render={({ field }) => (
             <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-              <div className="space-y-1">
-                <FormLabel>Use precise location (Optional)</FormLabel>
-                <FormDescription className="text-xs">
-                  Sharing your location helps us show the correct menu items and
-                  pricing for your area. Some restaurants offer different menus
-                  based on location.
+              <div className="space-y-0.5">
+                <FormLabel>Use Precise Location</FormLabel>
+                <FormDescription>
+                  Allow access to your precise location for more accurate
+                  results.
                 </FormDescription>
               </div>
               <FormControl>
-                {locationStatus === "loading" ? (
-                  <Loader2 className="size-12 animate-spin" />
-                ) : (
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={(val) => {
-                      if (val) {
-                        requestLocation();
-                      } else {
-                        setLocationStatus("idle");
-                        form.setValue("use-precise-location", false);
-                      }
-                    }}
-                  />
-                )}
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={(checked) => {
+                    field.onChange(checked);
+                    if (checked && locationStatus === "idle") {
+                      requestLocation();
+                    }
+                  }}
+                  disabled={locationStatus === "loading"}
+                />
               </FormControl>
-              <FormMessage />
             </FormItem>
           )}
         />
-        <Button type="submit">
-          Create <ArrowRight />
+        <Button type="submit" className="w-full">
+          {locationStatus === "loading" ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Getting location...
+            </>
+          ) : (
+            <>
+              Continue
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </>
+          )}
         </Button>
       </form>
     </Form>

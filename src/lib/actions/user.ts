@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { setUserCookie, getUserFromCookies } from "../cookies";
 
 interface CreateUserParams {
   id: string;
@@ -15,6 +16,8 @@ export const createUser = async ({ id, name }: CreateUserParams) => {
     },
   });
 
+  // Set user cookie after creating user
+  await setUserCookie(id, name);
   return user;
 };
 
@@ -26,6 +29,10 @@ export const getUser = async (userId: string) => {
   });
 
   return user;
+};
+
+export const getCurrentUser = async () => {
+  return await getUserFromCookies();
 };
 
 export const joinSession = async (userId: string, sessionId: string) => {
