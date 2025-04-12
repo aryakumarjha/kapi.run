@@ -182,10 +182,6 @@ const processCarouselCard = (cardData: any): MenuCategory | null => {
 };
 
 const fetchMenu = async (restaurantId: string, lat: number, lng: number) => {
-  if (process.env.NODE_ENV === "development") {
-    return (await import("../../../sample.alt.json")).default;
-  }
-
   const url = `https://www.swiggy.com/dapi/menu/pl?page-type=REGULAR_MENU&complete-menu=true&lat=${lat}&lng=${lng}&restaurantId=${restaurantId}`;
   const response = await fetch(url, {
     headers: {
