@@ -20,6 +20,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - DATABASE_URL=postgresql://kapirun:kapirun@db:5432/kapirun
     restart: always
     environment:
       - DATABASE_URL=postgresql://kapirun:kapirun@db:5432/kapirun
