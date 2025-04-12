@@ -44,6 +44,8 @@ model SessionUser {
 
 model Item {
     id        String   @id @default(cuid())
+    orderId   String   @default("")
+    image     String?
     sessionId String
     userId    String
     name      String

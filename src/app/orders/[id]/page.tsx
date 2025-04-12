@@ -1,23 +1,162 @@
 import { getSessionWithItems } from "@/lib/actions/session";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { formatInr } from "@/lib/format-inr";
 import { notFound } from "next/navigation";
-import { Item, User } from "@prisma/client";
+import { Item, Session, SessionUser, User } from "@prisma/client";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { formatDate } from "date-fns";
+import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import { formatInr } from "@/lib/format-inr";
+import { Badge } from "@/components/ui/badge";
+import { memo } from "react";
+import { User2 } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
 interface FinalOrderProps {
   params: Promise<{ id: string }>;
 }
 
-type ItemWithUser = Item & {
+interface ItemWithUser extends Item {
   user: User;
-};
+  addons:
+    | {
+        name: string;
+        price: number;
+        groupId: string;
+      }[]
+    | null;
+}
 
-type ParsedAddons = Array<{
+interface OrderItem {
+  id: string;
+  totalQuanity: number;
+  imageUrl?: string;
   name: string;
-  price: number;
-  groupId: string;
-}>;
+  priceEach: number;
+  noVariant: boolean;
+  variants: {
+    id: string;
+    name: string;
+    price: number;
+    quantity: number;
+    who: {
+      id: string;
+      name: string;
+      quantity: number;
+    }[];
+  }[];
+}
+
+interface OrderSession extends Session {
+  participants: SessionUser[];
+  items: ItemWithUser[];
+}
+
+const createOrderItems = (session: OrderSession): OrderItem[] => {
+  // Group items by orderId in one pass.
+  const groups: Record<string, ItemWithUser[]> = {};
+  for (const item of session.items) {
+    if (!groups[item.orderId]) {
+      groups[item.orderId] = [];
+    }
+    groups[item.orderId].push(item);
+  }
+
+  return Object.values(groups).map((groupItems) => {
+    const firstItem = groupItems[0];
+    const totalQuantity = groupItems.reduce(
+      (acc, item) => acc + item.quantity,
+      0
+    );
+
+    // Check if any item has addons.
+    let hasAddons = false;
+    for (const item of groupItems) {
+      if (item.addons && item.addons.length > 0) {
+        hasAddons = true;
+        break;
+      }
+    }
+
+    let variants: OrderItem["variants"] = [];
+    if (!hasAddons) {
+      variants = [
+        {
+          id: "regular",
+          name: "Regular",
+          price: 0, // No addon means a regular order.
+          quantity: totalQuantity,
+          who: groupItems.map((item) => ({
+            id: item.user.id,
+            name: item.user.name,
+            quantity: item.quantity,
+          })),
+        },
+      ];
+    } else {
+      // Use a Map to aggregate addons by name.
+      const addonMap: Record<
+        string,
+        {
+          price: number;
+          groupId: string;
+          quantity: number;
+          who: Map<string, { id: string; name: string; quantity: number }>;
+        }
+      > = {};
+
+      for (const item of groupItems) {
+        if (item.addons && item.addons.length > 0) {
+          for (const addon of item.addons) {
+            if (!addonMap[addon.name]) {
+              addonMap[addon.name] = {
+                price: addon.price,
+                groupId: addon.groupId,
+                quantity: 0,
+                who: new Map(),
+              };
+            }
+            addonMap[addon.name].quantity += item.quantity;
+            const userId = item.user.id;
+            const existing = addonMap[addon.name].who.get(userId);
+            if (existing) {
+              existing.quantity += item.quantity;
+            } else {
+              addonMap[addon.name].who.set(userId, {
+                id: item.user.id,
+                name: item.user.name,
+                quantity: item.quantity,
+              });
+            }
+          }
+        }
+      }
+
+      variants = Object.entries(addonMap).map(([addonName, data], index) => ({
+        id: data.groupId + index,
+        name: addonName,
+        price: data.price,
+        quantity: data.quantity,
+        who: Array.from(data.who.values()),
+      }));
+    }
+
+    return {
+      id: firstItem.orderId,
+      totalQuanity: totalQuantity,
+      imageUrl: firstItem.image || undefined,
+      name: firstItem.name,
+      priceEach: firstItem.basePrice,
+      variants,
+      noVariant: !hasAddons,
+    };
+  });
+};
 
 export default async function FinalOrder({ params }: FinalOrderProps) {
   const { id } = await params;
@@ -27,99 +166,127 @@ export default async function FinalOrder({ params }: FinalOrderProps) {
     notFound();
   }
 
-  // Group items by userName
-  const itemsByUser = (session.items as ItemWithUser[]).reduce<
-    Record<string, { items: ItemWithUser[]; total: number }>
-  >((acc, item) => {
-    const userName = item.user?.name || "Unknown";
-    if (!acc[userName]) {
-      acc[userName] = {
-        items: [],
-        total: 0,
-      };
-    }
-    acc[userName].items.push(item);
-    acc[userName].total += item.total;
-    return acc;
-  }, {});
-
-  const totalAmount = session.items.reduce((sum, item) => sum + item.total, 0);
+  const data = createOrderItems(session as OrderSession);
 
   return (
     <main className="container mx-auto p-4 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">{session.restaurantName}</h1>
-          <p className="text-muted-foreground">
-            Created by {session.creatorName}
-          </p>
-        </div>
-        {session.cutoffTime && (
-          <div className="text-muted-foreground">
-            Cutoff time: {new Date(session.cutoffTime).toLocaleTimeString()}
-          </div>
-        )}
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        {Object.entries(itemsByUser).map(([userName, { items, total }]) => (
-          <Card key={userName} className="flex flex-col">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>{userName}</span>
-                <span className="text-lg">{formatInr(total)}</span>
-              </CardTitle>
-            </CardHeader>
-            <ScrollArea className="flex-1">
-              <CardContent className="space-y-4">
-                {items.map((item, index) => {
-                  const addons = (item.addons as ParsedAddons) || [];
-                  return (
-                    <div key={index} className="space-y-2">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-medium">{item.name}</h3>
-                            <span className="text-sm text-muted-foreground">
-                              ×{item.quantity}
-                            </span>
-                          </div>
-                          {addons.length > 0 && (
-                            <div className="text-sm text-muted-foreground mt-1">
-                              {addons.map((addon, i) => (
-                                <div key={`${addon.name}-${i}`}>
-                                  + {addon.name} ({formatInr(addon.price)})
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                          {item.note && (
-                            <div className="text-sm text-muted-foreground mt-1 italic">
-                              Note: {item.note}
-                            </div>
-                          )}
-                        </div>
-                        <div className="font-medium">
-                          {formatInr(item.total)}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </CardContent>
-            </ScrollArea>
-          </Card>
-        ))}
-      </div>
-
       <Card>
-        <CardContent className="flex items-center justify-between p-6">
-          <CardTitle>Total Amount</CardTitle>
-          <span className="text-2xl font-semibold">
-            {formatInr(totalAmount)}
-          </span>
+        <CardHeader>
+          <CardTitle>{session.restaurantName}</CardTitle>
+          <CardDescription>
+            <span>
+              Created: {formatDate(session.createdAt, "PP h:mm a")} by{" "}
+              {session.creatorName}
+            </span>
+            {session.cutoffTime && (
+              <span>
+                {" "}
+                | Cutoff time: {formatDate(session.cutoffTime, "PP h:mm a")}
+              </span>
+            )}
+          </CardDescription>
+        </CardHeader>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Items</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ul className="space-y-8">
+            {data.map((item) => (
+              <li key={item.id}>
+                <OrderTile {...item} />
+              </li>
+            ))}
+          </ul>
         </CardContent>
+        <CardFooter className="border-t">
+          <div className="flex items-center justify-between w-full font-semibold text-lg">
+            <div>Total:</div>
+            <div>
+              {formatInr(
+                data.reduce((acc, item) => {
+                  return acc + item.priceEach * item.totalQuanity;
+                }, 0)
+              )}
+            </div>
+          </div>
+        </CardFooter>
       </Card>
     </main>
   );
 }
+
+const OrderTile = memo((item: OrderItem) => {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center gap-4">
+        <Avatar className="w-16 h-16 rounded-md">
+          <AvatarImage
+            src={item.imageUrl || "/placeholder.svg"}
+            alt={item.name}
+            className="object-cover"
+          />
+        </Avatar>
+        <div className="flex flex-col gap-1">
+          <span className="font-semibold flex items-center gap-2">
+            {item.name}
+            <Badge>{item.totalQuanity}</Badge>
+          </span>
+          <span className="text-sm flex gap-2">
+            <span>Price: {formatInr(item.priceEach)}</span>
+            {item.noVariant && (
+              <span className="text-sm">
+                {item.variants.map((variant) => (
+                  <div key={variant.id} className="flex items-center gap-2">
+                    <Badge variant="outline" className="mr-2">
+                      <User2 />
+                      {variant.who
+                        .map((who) => `${who.name} x${who.quantity}`)
+                        .join(", ")}
+                    </Badge>
+                  </div>
+                ))}
+              </span>
+            )}
+          </span>
+          {/* if there is no variant show who here instead*/}
+        </div>
+      </div>
+      {!item.noVariant && (
+        <div className="flex gap-6 ml-4">
+          <Separator orientation="vertical" className="border-accent !h-auto" />
+          <div className="border-l-2 border-accent bg-neutral-100 dark:bg-neutral-800 rounded-lg flex-1 p-4">
+            {item.variants.map((variant, index, arr) => (
+              <div key={variant.id} className="flex flex-col gap-4 text-sm">
+                <span>
+                  <Badge variant="outline" className="mr-2">
+                    {variant.quantity}
+                  </Badge>
+                  <span className="font-semibold">With: </span>
+                  {variant.name}
+                  {variant.price > 0 && (
+                    <span> +({formatInr(variant.price)})</span>
+                  )}
+                </span>
+                <span className="text-sm">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="mr-2">
+                      <User2 />
+                      {variant.who
+                        .map((who) => `${who.name} x${who.quantity}`)
+                        .join(", ")}
+                    </Badge>
+                  </div>
+                </span>
+                {index != arr.length - 1 && <Separator className="mb-4" />}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+});
+
+OrderTile.displayName = "Kapi_OrderTile";

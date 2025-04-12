@@ -11,7 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ShoppingCart, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { addItemToSession } from "@/lib/actions/order";
+import { addAllItemToSession } from "@/lib/actions/order";
 import { toast } from "sonner";
 import type { Session } from "@prisma/client";
 import { useRouter } from "next/navigation";
@@ -24,27 +24,27 @@ export const CartSummary = ({ session }: { session: Session }) => {
   const handleSubmit = useCallback(async () => {
     try {
       // Add each item to the session individually
-      const promises = items.map((item) =>
-        addItemToSession({
-          sessionId: session.id,
-          name: item.menuItem.name,
-          quantity: item.quantity,
-          note: item.note,
-          basePrice: item.menuItem.basePrice,
-          addons: item.selectedAddons
-            .map((group) =>
-              group.addons.map((addon) => ({
-                name: addon.name,
-                price: addon.price,
-                groupId: group.groupId,
-              }))
-            )
-            .flat(),
-          total: item.total,
-        })
-      );
+      const allItems = items.map((item) => ({
+        id: item.menuItem.id,
+        sessionId: session.id,
+        image: item.menuItem.imageUrl,
+        name: item.menuItem.name,
+        quantity: item.quantity,
+        note: item.note,
+        basePrice: item.menuItem.basePrice,
+        addons: item.selectedAddons
+          .map((group) =>
+            group.addons.map((addon) => ({
+              name: addon.name,
+              price: addon.price,
+              groupId: group.groupId,
+            }))
+          )
+          .flat(),
+        total: item.total,
+      }));
 
-      await Promise.all(promises);
+      await addAllItemToSession(allItems);
       clearCart();
       toast.success("Items added to session successfully!");
       router.refresh();

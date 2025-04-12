@@ -4,7 +4,9 @@ import { getUserFromCookies } from "../cookies";
 import { prisma } from "../prisma";
 
 export type AddItemInput = {
+  id: string;
   sessionId: string;
+  image?: string;
   name: string;
   quantity: number;
   note?: string;
@@ -17,14 +19,14 @@ export type AddItemInput = {
   total: number;
 };
 
-export async function addItemToSession(input: AddItemInput) {
+export async function addAllItemToSession(inputs: AddItemInput[]) {
   const user = await getUserFromCookies();
   if (!user) {
     throw new Error("User not found");
   }
-
-  const item = await prisma.item.create({
-    data: {
+  const items = await prisma.item.createMany({
+    data: inputs.map((input) => ({
+      orderId: input.id,
       sessionId: input.sessionId,
       userId: user.id,
       name: input.name,
@@ -33,14 +35,11 @@ export async function addItemToSession(input: AddItemInput) {
       basePrice: input.basePrice,
       addons: input.addons,
       total: input.total,
-    },
-    include: {
-      session: true,
-      user: true,
-    },
+      image: input.image,
+    })),
   });
 
-  return item;
+  return items;
 }
 
 export async function getSessionItems(sessionId: string) {
