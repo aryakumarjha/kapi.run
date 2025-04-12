@@ -36,7 +36,7 @@ import { format } from "date-fns";
 import { addHours } from "date-fns/addHours";
 import { ArrowRight, CalendarIcon, ClockIcon, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -166,7 +166,7 @@ export default function SessionCreateForm({
     form.setValue("cutoffTime", newDate);
   }
 
-  const requestLocation = () => {
+  const requestLocation = useCallback(() => {
     if (!navigator.geolocation) {
       toast.error("Geolocation is not supported by your browser");
       return;
@@ -203,9 +203,10 @@ export default function SessionCreateForm({
         }
         setLocationStatus("error");
         form.setValue("use-precise-location", false);
-      }
+      },
+      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
     );
-  };
+  }, [form]);
 
   return (
     <Form {...form}>
