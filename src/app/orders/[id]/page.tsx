@@ -266,7 +266,10 @@ const OrderTile = memo((item: OrderItem) => {
                   <span className="font-semibold">With: </span>
                   {variant.name}
                   {variant.price > 0 && (
-                    <span> +({formatInr(variant.price)})</span>
+                    <span>
+                      {" "}
+                      +({formatInr(variant.price * variant.quantity)})
+                    </span>
                   )}
                 </span>
                 <span className="text-sm">
