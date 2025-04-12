@@ -9,14 +9,20 @@ interface CreateUserParams {
 }
 
 export const createUser = async ({ id, name }: CreateUserParams) => {
-  const user = await prisma.user.create({
-    data: {
+  const user = await prisma.user.upsert({
+    where: {
+      id,
+    },
+    update: {
+      name,
+    },
+    create: {
       id,
       name,
     },
   });
 
-  // Set user cookie after creating user
+  // Set user cookie after creating/updating user
   await setUserCookie(id, name);
   return user;
 };
@@ -36,14 +42,23 @@ export const getCurrentUser = async () => {
 };
 
 export const joinSession = async (userId: string, sessionId: string) => {
-  const participation = await prisma.sessionUser.create({
-    data: {
-      userId,
-      sessionId,
-    },
-  });
+  try {
+    const participation = await prisma.sessionUser.create({
+      data: {
+        userId,
+        sessionId,
+      },
+    });
 
-  return participation;
+    return participation;
+  } catch (error: unknown) {
+    console.log("Error joining session:", error);
+    if (error instanceof Error) {
+      if (error.message.includes("Unique constraint failed")) {
+        throw new Error("Already joined the session");
+      }
+    }
+  }
 };
 
 export const leaveSession = async (userId: string, sessionId: string) => {

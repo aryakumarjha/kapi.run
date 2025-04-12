@@ -123,12 +123,10 @@ export default function SessionCreateForm({
     const session = await createSession(formData);
 
     // Create user if they don't exist
-    if (!user) {
-      await createUser({
-        id: userId,
-        name: data["creator-name"],
-      });
-    }
+    await createUser({
+      id: userId,
+      name: data["creator-name"],
+    });
 
     // Join the session
     await joinSession(userId, session.id);
