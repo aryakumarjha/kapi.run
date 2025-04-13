@@ -52,6 +52,23 @@ kapi.run streamlines this process by:
    - Ensures all items are correct
    - Places the final order through the actual delivery platform
 
+## Screenshots
+
+### Homepage - Create a New Session
+
+![Homepage](assets/screenshots/homepage.webp)
+_Create a new ordering session and set the cutoff time_
+
+### Active Session View
+
+![Session](assets/screenshots/session.webp)
+_Participants can browse the menu and add items with customizations_
+
+### Orders Dashboard
+
+![Orders](assets/screenshots/orders.webp)
+_Coordinator can view all items added by participants in one place_
+
 ## Tech Stack
 
 - 🚀 Next.js 15 for the frontend and API routes
