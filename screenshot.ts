@@ -12,18 +12,18 @@ const captue = async () => {
   // Capture OG Image
   await page.setViewport({ width: 1200, height: 630, deviceScaleFactor: 2 });
   await page.screenshot({
-    path: `${baseAssetsPath}/og.webp`,
-    type: "webp",
+    path: `${baseAssetsPath}/og.png`,
+    type: "png",
   });
 
   // Capture Twitter Image
   await page.setViewport({ width: 1200, height: 600, deviceScaleFactor: 2 });
   await page.screenshot({
-    path: `${baseAssetsPath}/twitter.webp`,
-    type: "webp",
+    path: `${baseAssetsPath}/twitter.png`,
+    type: "png",
   });
 
-  console.log("✅ Screenshot saved as og.webp, twitter.webp");
+  console.log("✅ Screenshot saved as og.png, twitter.png");
 
   await browser.close();
 };

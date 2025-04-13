@@ -4,14 +4,7 @@ const nextConfig: NextConfig = {
   output: "standalone",
   /* config options here */
   images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "media-assets.swiggy.com",
-        port: "",
-        pathname: "/**",
-      },
-    ],
+    remotePatterns: [new URL("https://media-assets.swiggy.com/**")],
   },
 };
 
