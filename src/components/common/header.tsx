@@ -24,7 +24,7 @@ export async function Header() {
       <div className="container flex h-14 items-center mx-auto">
         <Link href="/" className="flex items-center gap-2 font-medium">
           <Coffee className="h-5 w-5" />
-          <span>{SITE_CONFIG.name}</span>
+          <span>{SITE_CONFIG.applicationName}</span>
         </Link>
         <div className="flex-1" />
         <div className="flex items-center gap-2">
