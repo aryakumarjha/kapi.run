@@ -24,6 +24,9 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: SITE_CONFIG.title,
   description: SITE_CONFIG.description,
+  icons: {
+    icon: "/kapi.svg",
+  },
 };
 
 export default function RootLayout({
