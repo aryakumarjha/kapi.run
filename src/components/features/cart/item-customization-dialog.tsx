@@ -238,7 +238,7 @@ function ItemCustomizationDialog({
           {item.addons?.map((group) => (
             <div key={group.groupId}>
               <Label className="text-sm font-medium flex items-center justify-between">
-                <span>{group.groupName}</span>
+                <span>{group.groupName || "Add On"}</span>
                 {group.maxAddons && (
                   <Badge variant="outline" className="ml-2">
                     Max {group.maxAddons}
