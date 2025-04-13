@@ -58,7 +58,7 @@ RUN echo '#!/bin/sh\ncd /app\nbunx prisma migrate deploy\nbun server.js' > /app/
     chown nextjs:bun /app/start.sh
 
 # Copy the public directory to enable static file serving
-COPY --from=builder /app/public ./public#
+COPY --from=builder --chown=nextjs:bun /app/public ./public
 
 # Automatically leverage output traces to reduce image size
 COPY --from=builder --chown=nextjs:bun /app/.next/standalone ./
