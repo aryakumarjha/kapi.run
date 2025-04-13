@@ -13,9 +13,10 @@ import { formatDate } from "date-fns";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { formatInr } from "@/lib/format-inr";
 import { Badge } from "@/components/ui/badge";
-import { memo } from "react";
+import { cache, memo } from "react";
 import { User2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import type { Metadata } from "next/types";
 
 interface FinalOrderProps {
   params: Promise<{ id: string }>;
@@ -158,15 +159,46 @@ const createOrderItems = (session: OrderSession): OrderItem[] => {
   });
 };
 
+const getCachedSessionWithItems = cache(getSessionWithItems);
+const getCachedOrderItems = cache(createOrderItems);
+
+export const generateMetadata = async ({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> => {
+  const { id } = await params;
+  const session = await getCachedSessionWithItems(id);
+  if (session) {
+    const items = getCachedOrderItems(session as OrderSession);
+    const hasItems = items.length > 0;
+    return {
+      title: "View Order Summary",
+      description: !hasItems
+        ? `No items in this order yet.`
+        : `Order Summary for ${session.restaurantName} with ${items
+            .map((item) => item.name)
+            .join(", ")}. Total: ${formatInr(
+            items.reduce(
+              (acc, item) => acc + item.priceEach * item.totalQuanity,
+              0
+            )
+          )}`,
+    };
+  }
+
+  return {};
+};
+
 export default async function FinalOrder({ params }: FinalOrderProps) {
   const { id } = await params;
-  const session = await getSessionWithItems(id);
+  const session = await getCachedSessionWithItems(id);
 
   if (!session) {
     notFound();
   }
 
-  const data = createOrderItems(session as OrderSession);
+  const data = getCachedOrderItems(session as OrderSession);
 
   return (
     <main className="container mx-auto p-4 space-y-6">
