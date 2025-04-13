@@ -53,6 +53,7 @@ export default function Home() {
                 className="flex-1"
                 name="kapi-session-link"
                 required
+                id="kapi-session-link"
               />
               <Button
                 variant="secondary"
