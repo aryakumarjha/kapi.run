@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://kapi.run";
+
 export const SITE_CONFIG: Metadata & Record<string, unknown> = {
   applicationName: "Kapi.run",
   title: {
@@ -7,15 +9,24 @@ export const SITE_CONFIG: Metadata & Record<string, unknown> = {
     default: "Kapi.run - Team Food Ordering",
   },
   description: "Simplify team food ordering with Kapi.run",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://kapi.run"),
+  metadataBase: new URL(BASE_URL),
   icons: {
     icon: "/kapi.svg",
   },
   creator: "Aryakumar Jha",
-  // authors: [
-  //   {
-  //     name: "Aryakumar Jha",
-  //     url: "https://aryak.dev",
-  //   },
-  // ],
+  openGraph: {
+    siteName: "Kapi.run",
+    title: "Kapi.run - Team Food Ordering",
+    description: "Simplify team food ordering with Kapi.run",
+    url: BASE_URL,
+    images: `${BASE_URL}/og.webp`,
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    images: [`${BASE_URL}/twitter.webp`],
+    card: "summary_large_image",
+    title: "Kapi.run - Team Food Ordering",
+    description: "Simplify team food ordering with Kapi.run",
+  },
 } as const;
