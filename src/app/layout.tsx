@@ -28,6 +28,9 @@ export const metadata: Metadata = {
   icons: SITE_CONFIG.icons,
   authors: SITE_CONFIG.authors,
   metadataBase: SITE_CONFIG.metadataBase,
+  openGraph: SITE_CONFIG.openGraph,
+  twitter: SITE_CONFIG.twitter,
+  creator: SITE_CONFIG.creator,
 };
 
 export default function RootLayout({
