@@ -8,6 +8,12 @@ import {
 import { fetchRestaurants } from "@/lib/actions/restaurants";
 import { Coffee } from "lucide-react";
 import SessionCreateForm from "./form";
+import { Metadata } from "next";
+
+export const generateMetadata = (): Metadata => ({
+  title: "Create Order Session",
+  description: "Create a new order session",
+});
 
 export default async function CreatePage() {
   const restaurants = await fetchRestaurants();

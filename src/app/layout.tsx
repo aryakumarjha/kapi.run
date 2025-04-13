@@ -22,11 +22,12 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  applicationName: SITE_CONFIG.applicationName,
   title: SITE_CONFIG.title,
   description: SITE_CONFIG.description,
-  icons: {
-    icon: "/kapi.svg",
-  },
+  icons: SITE_CONFIG.icons,
+  authors: SITE_CONFIG.authors,
+  metadataBase: SITE_CONFIG.metadataBase,
 };
 
 export default function RootLayout({

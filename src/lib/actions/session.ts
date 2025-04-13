@@ -27,7 +27,11 @@ export const getSession = async (id: string) => {
       id,
     },
     include: {
-      participants: true,
+      participants: {
+        include: {
+          user: true,
+        },
+      },
     },
   });
 
