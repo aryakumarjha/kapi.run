@@ -20,7 +20,7 @@ export async function Header() {
   const sessions = user ? await getUserSessions(user.id) : [];
 
   return (
-    <header className="border-b sticky top-0 z-10 bg-background">
+    <header className="border-b sticky top-0 z-10 bg-background px-4">
       <div className="container flex h-14 items-center mx-auto">
         <Link href="/" className="flex items-center gap-2 font-medium">
           <Coffee className="h-5 w-5" />
