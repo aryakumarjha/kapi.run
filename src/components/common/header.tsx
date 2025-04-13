@@ -12,8 +12,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { format } from "date-fns";
 import { SITE_CONFIG } from "@/config/site";
+import FormattedTime from "./time";
 
 export async function Header() {
   const user = await getCurrentUser();
@@ -52,12 +52,21 @@ export async function Header() {
                               {session.restaurantName}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              {format(
+                              {/* {format(
                                 new Date(session.createdAt),
                                 "MMM d, h:mm a"
                               )}{" "}
                               -{" "}
-                              {format(new Date(session.cutoffTime!), "h:mm a")}
+                              {format(new Date(session.cutoffTime!), "h:mm a")} */}
+                              <FormattedTime
+                                input={session.createdAt!.toISOString()}
+                                format="MMM d, h:mm a"
+                              />
+                              {" - "}
+                              <FormattedTime
+                                input={session.cutoffTime!.toISOString()}
+                                format="h:mm a"
+                              />
                             </div>
                           </div>
                         </Link>
