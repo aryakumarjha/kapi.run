@@ -46,7 +46,7 @@ export async function Header() {
                     </DropdownMenuLabel>
                     {sessions.map((session) => (
                       <DropdownMenuItem key={session.id} asChild>
-                        <Link href={`/${session.id}`}>
+                        <Link href={`/sessions/${session.id}`}>
                           <div className="w-full pr-4">
                             <div className="font-medium">
                               {session.restaurantName}

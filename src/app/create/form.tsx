@@ -130,7 +130,7 @@ export default function SessionCreateForm({
 
     // Join the session
     await joinSession(userId, session.id);
-    router.replace(`/${session.id}`);
+    router.replace(`/sessions/${session.id}`);
   };
 
   function handleDateSelect(date: Date | undefined) {

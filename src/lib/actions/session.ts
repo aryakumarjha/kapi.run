@@ -74,7 +74,7 @@ export const joinSession = async (form: FormData) => {
 
   // No need to check for user here since we handle that on the client side
   // This keeps the server action simple and allows client-side user state management
-  return redirect(`/${sessionId}`);
+  return redirect(`/sessions/${sessionId}`);
 };
 
 export const isSessionCreator = async (sessionId: string, userId: string) => {
