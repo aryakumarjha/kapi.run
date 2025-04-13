@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Coffee, Plus, User2 } from "lucide-react";
-import { ThemeSwitcher } from "./theme-switcher";
+import { ThemeSwitcher } from "@/components/common/theme-switcher";
 import { getCurrentUser } from "@/lib/actions/user";
 import { getUserSessions } from "@/lib/actions/user-sessions";
 import {
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
+import { SITE_CONFIG } from "@/config/site";
 
 export async function Header() {
   const user = await getCurrentUser();
@@ -23,7 +24,7 @@ export async function Header() {
       <div className="container flex h-14 items-center mx-auto">
         <Link href="/" className="flex items-center gap-2 font-medium">
           <Coffee className="h-5 w-5" />
-          <span>Kapi.run</span>
+          <span>{SITE_CONFIG.name}</span>
         </Link>
         <div className="flex-1" />
         <div className="flex items-center gap-2">

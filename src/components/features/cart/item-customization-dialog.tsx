@@ -5,18 +5,18 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "./ui/dialog";
+} from "@/components/ui/dialog";
 import { SimplifiedMenuItem, Variant, type Addon } from "@/types/menu";
-import { Button } from "./ui/button";
-import { Checkbox } from "./ui/checkbox";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "./ui/label";
-import { useCart } from "@/lib/store/cart";
-import { Badge } from "./ui/badge";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Plus, Minus } from "lucide-react";
 import { formatInr } from "@/lib/format-inr";
+import { useCart } from "./store";
 
-interface ItemCustomizationDialogProps {
+export interface ItemCustomizationDialogProps {
   item: SimplifiedMenuItem;
   open: boolean;
   onClose: () => void;
@@ -198,134 +198,94 @@ function ItemCustomizationDialog({
 
         <div className="space-y-6">
           {/* Variants Section */}
-          {item.variants?.map((group) => {
-            const sortedVariants = [...group.variants].sort((a, b) => {
-              const priceA = isNaN(a.price) ? 0 : a.price;
-              const priceB = isNaN(b.price) ? 0 : b.price;
-              return priceA - priceB;
-            });
-            return (
-              <div key={group.groupId} className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-medium">{group.groupName}</h3>
-                  <Badge variant="secondary" className="text-xs">
-                    Required
-                  </Badge>
-                </div>
-
-                <div className="space-y-2">
-                  <RadioGroup
-                    onValueChange={(value: string) => {
-                      const variant = sortedVariants.find(
-                        (v) => v.id === value
-                      );
-                      if (variant) {
-                        handleVariantChange(group.groupId, variant);
-                      }
-                    }}
-                    value={selectedVariants[group.groupId]?.id}
-                  >
-                    {sortedVariants.map((variant) => (
-                      <div
-                        key={variant.id}
-                        className="flex items-center space-x-2"
-                      >
+          {item.variants?.map((group) => (
+            <div key={group.groupId}>
+              <Label className="text-sm font-medium">{group.groupName}</Label>
+              <RadioGroup
+                value={selectedVariants[group.groupId]?.id}
+                onValueChange={(value) => {
+                  const variant = group.variants.find((v) => v.id === value);
+                  if (variant) handleVariantChange(group.groupId, variant);
+                }}
+                className="mt-2 grid gap-2"
+              >
+                {group.variants
+                  .filter(
+                    (variant) =>
+                      variant.inStock !== false && variant.isEnabled !== false
+                  )
+                  .map((variant) => (
+                    <div
+                      key={variant.id}
+                      className="flex items-center justify-between space-x-2 rounded-md border p-2"
+                    >
+                      <div className="flex items-center gap-2">
                         <RadioGroupItem value={variant.id} id={variant.id} />
-                        <Label htmlFor={variant.id} className="flex-1">
+                        <Label htmlFor={variant.id} className="cursor-pointer">
                           {variant.name}
                         </Label>
-                        <span className="text-sm text-muted-foreground">
-                          +{formatInr(variant.price)}
-                        </span>
                       </div>
-                    ))}
-                  </RadioGroup>
-                </div>
-              </div>
-            );
-          })}
+                      <Badge variant="secondary">
+                        {formatInr(variant.price || 0)}
+                      </Badge>
+                    </div>
+                  ))}
+              </RadioGroup>
+            </div>
+          ))}
 
           {/* Addons Section */}
-          {item.addons?.map((group) => {
-            const sortedChoices = [...group.choices].sort((a, b) => {
-              const priceA = isNaN(a.price) ? 0 : a.price;
-              const priceB = isNaN(b.price) ? 0 : b.price;
-              return priceA - priceB;
-            });
-            return (
-              <div key={group.groupId} className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-medium">{group.groupName || "Add On"}</h3>
-                  {group.minAddons && group.maxAddons && (
-                    <Badge variant="outline" className="text-xs">
-                      {group.minAddons === group.maxAddons
-                        ? `Select ${group.minAddons}`
-                        : `Select ${group.minAddons}-${group.maxAddons}`}
-                    </Badge>
-                  )}
-                </div>
+          {item.addons?.map((group) => (
+            <div key={group.groupId}>
+              <Label className="text-sm font-medium flex items-center justify-between">
+                <span>{group.groupName}</span>
+                {group.maxAddons && (
+                  <Badge variant="outline" className="ml-2">
+                    Max {group.maxAddons}
+                  </Badge>
+                )}
+              </Label>
+              <div className="mt-2 grid gap-2">
+                {group.choices
+                  .filter(
+                    (addon) =>
+                      addon.inStock !== false && addon.isEnabled !== false
+                  )
+                  .map((addon) => {
+                    const isSelected = (
+                      selectedAddons[group.groupId] || []
+                    ).some((a) => a.id === addon.id);
 
-                <div className="space-y-2">
-                  {group.maxAddons === 1 || !group.maxAddons ? (
-                    <RadioGroup
-                      onValueChange={(value: string) => {
-                        const addon = sortedChoices.find((c) => c.id === value);
-                        if (addon) {
-                          handleAddonChange(group.groupId, addon, false);
-                        }
-                      }}
-                      value={selectedAddons[group.groupId]?.[0]?.id}
-                    >
-                      {sortedChoices.map((choice) => (
-                        <div
-                          key={choice.id}
-                          className="flex items-center space-x-2"
-                        >
-                          <RadioGroupItem value={choice.id} id={choice.id} />
-                          <Label htmlFor={choice.id} className="flex-1">
-                            {choice.name}
-                          </Label>
-                          <span className="text-sm text-muted-foreground">
-                            +{formatInr(choice.price)}
-                          </span>
-                        </div>
-                      ))}
-                    </RadioGroup>
-                  ) : (
-                    sortedChoices.map((choice) => (
+                    return (
                       <div
-                        key={choice.id}
-                        className="flex items-center space-x-2"
+                        key={addon.id}
+                        className="flex items-center justify-between space-x-2 rounded-md border p-2"
                       >
-                        <Checkbox
-                          id={choice.id}
-                          checked={selectedAddons[group.groupId]?.some(
-                            (a) => a.id === choice.id
-                          )}
-                          onCheckedChange={() =>
-                            handleAddonChange(group.groupId, choice, true)
-                          }
-                          disabled={
-                            selectedAddons[group.groupId]?.length ===
-                              group.maxAddons &&
-                            !selectedAddons[group.groupId]?.some(
-                              (a) => a.id === choice.id
-                            )
-                          }
-                        />
-                        <Label htmlFor={choice.id} className="flex-1">
-                          {choice.name}
-                        </Label>
-                        <span className="text-sm text-muted-foreground">
-                          +{formatInr(choice.price)}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id={addon.id}
+                            checked={isSelected}
+                            onCheckedChange={() =>
+                              handleAddonChange(
+                                group.groupId,
+                                addon,
+                                group.maxAddons !== 1
+                              )
+                            }
+                          />
+                          <Label htmlFor={addon.id} className="cursor-pointer">
+                            {addon.name}
+                          </Label>
+                        </div>
+                        <Badge variant="secondary">
+                          {formatInr(addon.price || 0)}
+                        </Badge>
                       </div>
-                    ))
-                  )}
-                </div>
+                    );
+                  })}
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
 
         <div className="flex items-center justify-between mt-6 gap-4">

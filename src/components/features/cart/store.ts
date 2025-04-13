@@ -3,7 +3,7 @@ import { type SimplifiedMenuItem, type Addon, Variant } from "@/types/menu";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { nanoid } from "nanoid";
 
-interface CartItem {
+export interface CartItem {
   menuItem: SimplifiedMenuItem;
   quantity: number;
   selectedVariants: {
@@ -19,12 +19,12 @@ interface CartItem {
   note?: string;
 }
 
-interface CartItemWithIdAndTotal extends CartItem {
+export interface CartItemWithIdAndTotal extends CartItem {
   id: string;
   total: number;
 }
 
-interface CartStore {
+export interface CartStore {
   items: CartItemWithIdAndTotal[];
   totalAmount: number; // in rupees not paise
   addItem: (item: CartItem) => void;
@@ -63,7 +63,6 @@ export const useCart = create<CartStore>()(
         const cartItem: CartItemWithIdAndTotal = {
           ...item,
           id: nanoid(),
-          // calculate total with addons
           total: calculateItemTotal(item) * item.quantity,
         };
 

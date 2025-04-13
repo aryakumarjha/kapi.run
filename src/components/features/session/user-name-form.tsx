@@ -15,15 +15,12 @@ import { Label } from "@/components/ui/label";
 import { nanoid } from "nanoid";
 import { createUser, joinSession, getCurrentUser } from "@/lib/actions/user";
 
-interface UserNameFormProps {
+export interface UserNameFormProps {
   onComplete: () => void;
   sessionId: string;
 }
 
-export default function UserNameForm({
-  onComplete,
-  sessionId,
-}: UserNameFormProps) {
+export function UserNameForm({ onComplete, sessionId }: UserNameFormProps) {
   const [name, setName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 

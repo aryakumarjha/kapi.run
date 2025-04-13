@@ -1,14 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/theme-provider";
-import { Header } from "@/components/header";
+import { ThemeProvider } from "@/providers/theme-provider";
+import { MainLayout } from "@/components/layouts/main-layout";
 import { Toaster } from "@/components/ui/sonner";
-
-const META_THEME_COLORS = {
-  light: "#ffffff",
-  dark: "#09090b",
-};
+import { META_THEME_COLORS, THEME_CONFIG } from "@/config/theme";
+import { SITE_CONFIG } from "@/config/site";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,8 +22,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Kapi.run - Team Food Ordering",
-  description: "Simplify team food ordering with Kapi.run",
+  title: SITE_CONFIG.title,
+  description: SITE_CONFIG.description,
 };
 
 export default function RootLayout({
@@ -52,16 +49,8 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased font-sans`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <div className="flex flex-col min-h-svh">
-            <Header />
-            {children}
-          </div>
+        <ThemeProvider {...THEME_CONFIG}>
+          <MainLayout>{children}</MainLayout>
           <Toaster />
         </ThemeProvider>
       </body>

@@ -7,7 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { nanoid } from "nanoid";
 import { formatInr } from "@/lib/format-inr";
 
-export const MenuItemCard = ({ item }: { item: SimplifiedMenuItem }) => {
+export interface MenuItemCardProps {
+  item: SimplifiedMenuItem;
+}
+
+export const MenuItemCard = ({ item }: MenuItemCardProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState({
     open: false,
     id: "",

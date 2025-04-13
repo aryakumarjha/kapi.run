@@ -1,4 +1,4 @@
-import { useCart } from "@/lib/store/cart";
+import { useCart } from "./store";
 import React, { useCallback } from "react";
 import {
   Card,
@@ -17,7 +17,11 @@ import type { Session } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { formatInr } from "@/lib/format-inr";
 
-export const CartSummary = ({ session }: { session: Session }) => {
+export interface CartSummaryProps {
+  session: Session;
+}
+
+export const CartSummary = ({ session }: CartSummaryProps) => {
   const { items, totalAmount: total, removeItemByIndex, clearCart } = useCart();
   const router = useRouter();
 

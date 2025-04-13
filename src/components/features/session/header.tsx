@@ -2,14 +2,14 @@ import { Button } from "@/components/ui/button";
 import type { Session } from "@prisma/client";
 import { format } from "date-fns";
 import { Clock } from "lucide-react";
-import CopySession from "./copy-session";
+import { CopySession } from "./copy-session";
 import Link from "next/link";
 
-interface MenuHeaderProps {
+export interface SessionHeaderProps {
   session: Session;
 }
 
-export default function MenuHeader({ session }: MenuHeaderProps) {
+export function SessionHeader({ session }: SessionHeaderProps) {
   return (
     <div className="border-b sticky top-0 z-10 bg-background">
       <div className="container mx-auto py-3">

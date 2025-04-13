@@ -3,9 +3,9 @@
 import { Session } from "@prisma/client";
 import { useEffect, useState } from "react";
 import { isUserInSession, getCurrentUser } from "@/lib/actions/user";
-import UserNameForm from "@/components/user-name-form";
+import { UserNameForm } from "@/components/features/session/user-name-form";
 import Menu from "./menu";
-import MenuHeader from "./header";
+import { SessionHeader } from "@/components/features/session/header";
 import type { MenuResponse } from "@/types/menu";
 
 interface SessionClientProps {
@@ -56,7 +56,7 @@ export default function SessionClient({ session, menu }: SessionClientProps) {
 
   return (
     <div className="space-y-4">
-      <MenuHeader session={session} />
+      <SessionHeader session={session} />
       <main className="@container/menu container mx-auto flex-1">
         <Menu menu={menu} session={session} />
       </main>

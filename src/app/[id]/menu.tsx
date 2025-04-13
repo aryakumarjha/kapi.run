@@ -2,8 +2,8 @@
 
 import React from "react";
 import { MenuResponse } from "@/types/menu";
-import { MenuList } from "./menu-list";
-import { CartSummary } from "./cart-summary";
+import { MenuList } from "@/components/features/menu/menu-list";
+import { CartSummary } from "@/components/features/cart/cart-summary";
 import { Session } from "@prisma/client";
 
 interface MenuProps {

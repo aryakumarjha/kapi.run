@@ -10,10 +10,14 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MenuItemCard } from "./item-card";
+import { MenuItemCard } from "./menu-item-card";
 import { Search } from "lucide-react";
 
-export const MenuList = ({ menu }: { menu: Menu }) => {
+export interface MenuListProps {
+  menu: Menu;
+}
+
+export const MenuList = ({ menu }: MenuListProps) => {
   const [searchQuery, setSearchQuery] = React.useState("");
   const filteredMenu = React.useMemo(() => {
     if (!searchQuery.trim()) return menu;
@@ -26,10 +30,11 @@ export const MenuList = ({ menu }: { menu: Menu }) => {
           item.description?.toLowerCase().includes(searchQuery.toLowerCase())
       );
 
+      // Filter subcategories if they exist
       const matchingSubcategories: Record<string, SimplifiedMenuItem[]> = {};
       if (menuCategory.subcategories) {
         Object.entries(menuCategory.subcategories).forEach(
-          ([subcat, items]) => {
+          ([subcategory, items]) => {
             const matchingSubItems = items.filter(
               (item) =>
                 item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -38,7 +43,7 @@ export const MenuList = ({ menu }: { menu: Menu }) => {
                   .includes(searchQuery.toLowerCase())
             );
             if (matchingSubItems.length > 0) {
-              matchingSubcategories[subcat] = matchingSubItems;
+              matchingSubcategories[subcategory] = matchingSubItems;
             }
           }
         );
@@ -58,6 +63,7 @@ export const MenuList = ({ menu }: { menu: Menu }) => {
         };
       }
     });
+
     return filtered;
   }, [menu, searchQuery]);
 
