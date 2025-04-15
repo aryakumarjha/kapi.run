@@ -4,7 +4,7 @@ const USER_COOKIE_NAME = "kapi_user";
 
 const screenShotsPath = process.cwd() + "/assets/screenshots";
 
-const sessionId = "cm9fo079g0000mz2gkl3qhpfk";
+const sessionId = "cm9i3jsjl0000sc29pdup8cnp";
 
 const assets = [
   {
