@@ -12,6 +12,15 @@ const assets = [
     path: `${screenShotsPath}/homepage.webp`,
   },
   {
+    url: "https://kapi.run",
+    path: `${screenShotsPath}/github.png`,
+    format: "png",
+    dimensions: {
+      width: 1280,
+      height: 640,
+    },
+  },
+  {
     url: `https://kapi.run/sessions/${sessionId}`,
     path: `${screenShotsPath}/session.webp`,
   },
@@ -201,10 +210,13 @@ const captue = async () => {
 
   await assets.reduce(async (prevPromise, asset) => {
     await prevPromise;
+    if (asset.dimensions) {
+      await page.setViewport(asset.dimensions);
+    }
     await page.goto(asset.url, { waitUntil: "networkidle0" });
     await page.screenshot({
       path: asset.path,
-      type: "webp",
+      type: (asset.format || "webp") as "png" | "jpeg" | "webp",
     });
     if (asset.url === "https://kapi.run") {
       await setLocalStorage(page);
