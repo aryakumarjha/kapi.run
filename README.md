@@ -74,7 +74,6 @@ _Coordinator can view all items added by participants in one place_
 - 🚀 Next.js 15 for the frontend and API routes
 - 💾 PostgreSQL with Prisma for data persistence
 - 🎨 Tailwind CSS & Shadcn UI for the interface
-- 🔄 Real-time updates using React Server Components
 - 🐳 Docker support for easy development and deployment
 
 ## Quick Start
